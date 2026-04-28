@@ -1,10 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "jlpt-coverage"
 version = "0.1.0"
 description = "An Anki add-on for checking JLPT vocabulary coverage of Japanese mining cards."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "python-i18n>=0.3.9",
+]
+
+[project.scripts]
+jlpt-coverage = "jlpt_coverage.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["jlpt_coverage*"]
+
+[tool.setuptools.package-data]
+jlpt_coverage = [
+    "data/*.csv",
+    "locale/*.json",
+]
 
 [tool.uv]
-package = false
+package = true

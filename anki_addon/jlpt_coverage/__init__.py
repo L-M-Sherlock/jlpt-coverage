@@ -66,7 +66,7 @@ except ImportError:
 
 ADDON_DIR = Path(__file__).resolve().parent
 PACKAGE_VOCAB_PATH = ADDON_DIR / "data" / "jlpt_vocab.csv"
-SOURCE_VOCAB_PATH = ADDON_DIR.parents[1] / "data" / "jlpt_vocab.csv"
+SOURCE_VOCAB_PATH = ADDON_DIR.parents[1] / "jlpt_coverage" / "data" / "jlpt_vocab.csv"
 
 MODE_CHOICES = (
     ("word-or-reading", "mode-word-or-reading"),

@@ -125,25 +125,42 @@ Localization is implemented with the bundled `python_i18n` git submodule and JSO
 
 ## Command Line Tool
 
-The Anki add-on is the primary interface. A CLI is also available for local checks and development:
+The Anki add-on is the primary interface. A CLI is also available for one-off checks.
+
+Run it directly from GitHub without cloning the repository:
 
 ```bash
-uv run scripts/check_jlpt_coverage.py
+uvx --from git+https://github.com/L-M-Sherlock/jlpt-coverage.git jlpt-coverage
+```
+
+If you have multiple Anki profiles, pass the profile explicitly:
+
+```bash
+uvx --from git+https://github.com/L-M-Sherlock/jlpt-coverage.git jlpt-coverage \
+  --profile-dir "$HOME/Library/Application Support/Anki2/<ProfileName>"
+```
+
+Inside a local checkout, run the installed console command:
+
+```bash
+uv run jlpt-coverage
 ```
 
 Common options:
 
 ```bash
-uv run scripts/check_jlpt_coverage.py --reading-only
-uv run scripts/check_jlpt_coverage.py --strict-word
-uv run scripts/check_jlpt_coverage.py --by-frequency
-uv run scripts/check_jlpt_coverage.py --by-interval
-uv run scripts/check_jlpt_coverage.py --exclude-suspended
-uv run scripts/check_jlpt_coverage.py --language en_US
-uv run scripts/check_jlpt_coverage.py --language zh_CN
+uv run jlpt-coverage --reading-only
+uv run jlpt-coverage --strict-word
+uv run jlpt-coverage --by-frequency
+uv run jlpt-coverage --by-interval
+uv run jlpt-coverage --exclude-suspended
+uv run jlpt-coverage --language en_US
+uv run jlpt-coverage --language zh_CN
 ```
 
-The CLI copies `collection.anki2` and related SQLite sidecar files before connecting to SQLite. It does not connect directly to the live collection database.
+The CLI auto-detects a single local Anki profile when possible. You can also pass `--profile-dir` or set `ANKI_PROFILE_DIR`.
+
+The CLI copies `collection.anki2` and related SQLite sidecar files before connecting to SQLite. It does not connect directly to the live collection database. Reports are written to `./jlpt_coverage_reports` by default.
 
 ## Development
 
@@ -173,7 +190,7 @@ Extract the project-local vocabulary CSV from the original source deck:
 uv run scripts/extract_jlpt_vocab.py
 ```
 
-This writes only the columns needed by the tool into `data/jlpt_vocab.csv`.
+This writes only the columns needed by the tool into `jlpt_coverage/data/jlpt_vocab.csv`.
 
 The GitHub Actions workflow builds and validates the add-on on pushes and pull requests. For `v*` tags, it also uploads `jlpt_coverage.ankiaddon` directly to the GitHub Release.
 

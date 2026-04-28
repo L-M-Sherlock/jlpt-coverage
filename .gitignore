@@ -19,6 +19,7 @@ htmlcov/
 reports/
 dist/
 build/
+*.egg-info/
 *.ankiaddon
 *.anki2
 *.anki2-wal

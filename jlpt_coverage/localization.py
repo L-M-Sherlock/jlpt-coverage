@@ -5,11 +5,15 @@ import os
 from pathlib import Path
 from typing import Callable
 
-from python_i18n import i18n
+try:
+    from python_i18n import i18n
+except ImportError:
+    import i18n
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-LOCALE_DIR = PROJECT_ROOT / "anki_addon" / "jlpt_coverage" / "locale"
+PACKAGE_LOCALE_DIR = Path(__file__).resolve().parent / "locale"
+SOURCE_LOCALE_DIR = PROJECT_ROOT / "anki_addon" / "jlpt_coverage" / "locale"
 SUPPORTED_LOCALES = {"en_US", "zh_CN"}
 FALLBACK_LOCALE = "en_US"
 
@@ -30,8 +34,9 @@ def detect_locale() -> str:
 
 def configure_translations(language: str = "auto") -> Callable[..., str]:
     locale = detect_locale() if language == "auto" else normalize_locale(language)
-    if LOCALE_DIR not in i18n.load_path:
-        i18n.load_path.append(LOCALE_DIR)
+    locale_dir = PACKAGE_LOCALE_DIR if PACKAGE_LOCALE_DIR.exists() else SOURCE_LOCALE_DIR
+    if locale_dir not in i18n.load_path:
+        i18n.load_path.append(locale_dir)
     i18n.set("filename_format", "{locale}.{format}")
     i18n.set("file_format", "json")
     i18n.set("locale", locale)

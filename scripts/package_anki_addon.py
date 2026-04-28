@@ -12,15 +12,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ADDON_SOURCE = PROJECT_ROOT / "anki_addon" / "jlpt_coverage"
 SHARED_PACKAGE = PROJECT_ROOT / "jlpt_coverage"
 PYTHON_I18N = PROJECT_ROOT / "python_i18n"
-VOCAB_CSV = PROJECT_ROOT / "data" / "jlpt_vocab.csv"
+VOCAB_CSV = SHARED_PACKAGE / "data" / "jlpt_vocab.csv"
 DEFAULT_OUTPUT = PROJECT_ROOT / "dist" / "jlpt_coverage.ankiaddon"
 
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", ".git", ".gitignore")
+SHARED_PACKAGE_IGNORE = shutil.ignore_patterns("data", "locale", "__pycache__", "*.pyc", ".DS_Store")
 
 
 def copy_source(staging_dir: Path) -> None:
     shutil.copytree(ADDON_SOURCE, staging_dir, dirs_exist_ok=True, ignore=IGNORE)
-    shutil.copytree(SHARED_PACKAGE, staging_dir / "jlpt_coverage", dirs_exist_ok=True, ignore=IGNORE)
+    shutil.copytree(
+        SHARED_PACKAGE,
+        staging_dir / "jlpt_coverage",
+        dirs_exist_ok=True,
+        ignore=SHARED_PACKAGE_IGNORE,
+    )
     shutil.copytree(PYTHON_I18N, staging_dir / "python_i18n", dirs_exist_ok=True, ignore=IGNORE)
     data_dir = staging_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)

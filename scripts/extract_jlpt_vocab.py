@@ -16,7 +16,7 @@ from jlpt_coverage.extract import write_vocab
 DEFAULT_SOURCE = Path(
     "/Users/jarrettye/Codes/anki-jlpt-decks/eggrolls-JLPT10k-v3/notes.csv"
 )
-DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "jlpt_vocab.csv"
+DEFAULT_OUTPUT = PROJECT_ROOT / "jlpt_coverage" / "data" / "jlpt_vocab.csv"
 
 
 def parse_args() -> argparse.Namespace:

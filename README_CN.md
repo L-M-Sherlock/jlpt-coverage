@@ -125,25 +125,42 @@ level,frequency,word_plain,reading,missing,unlearned
 
 ## 命令行工具
 
-Anki 插件是主要入口。项目也保留了一个命令行工具，方便本地检查和开发：
+Anki 插件是主要入口。项目也提供命令行工具，方便一次性检查。
+
+不 clone 仓库，直接从 GitHub 运行：
 
 ```bash
-uv run scripts/check_jlpt_coverage.py
+uvx --from git+https://github.com/L-M-Sherlock/jlpt-coverage.git jlpt-coverage
+```
+
+如果本机有多个 Anki profile，请显式传入 profile 路径：
+
+```bash
+uvx --from git+https://github.com/L-M-Sherlock/jlpt-coverage.git jlpt-coverage \
+  --profile-dir "$HOME/Library/Application Support/Anki2/<ProfileName>"
+```
+
+在本地 checkout 中运行安装后的命令：
+
+```bash
+uv run jlpt-coverage
 ```
 
 常用参数：
 
 ```bash
-uv run scripts/check_jlpt_coverage.py --reading-only
-uv run scripts/check_jlpt_coverage.py --strict-word
-uv run scripts/check_jlpt_coverage.py --by-frequency
-uv run scripts/check_jlpt_coverage.py --by-interval
-uv run scripts/check_jlpt_coverage.py --exclude-suspended
-uv run scripts/check_jlpt_coverage.py --language en_US
-uv run scripts/check_jlpt_coverage.py --language zh_CN
+uv run jlpt-coverage --reading-only
+uv run jlpt-coverage --strict-word
+uv run jlpt-coverage --by-frequency
+uv run jlpt-coverage --by-interval
+uv run jlpt-coverage --exclude-suspended
+uv run jlpt-coverage --language en_US
+uv run jlpt-coverage --language zh_CN
 ```
 
-CLI 会先复制 `collection.anki2` 和相关 SQLite sidecar 文件，再连接副本；不会直接连接正在使用的 Anki 集合数据库。
+CLI 会在可行时自动识别本机唯一的 Anki profile。你也可以传入 `--profile-dir`，或设置 `ANKI_PROFILE_DIR`。
+
+CLI 会先复制 `collection.anki2` 和相关 SQLite sidecar 文件，再连接副本；不会直接连接正在使用的 Anki 集合数据库。默认报表目录为当前目录下的 `jlpt_coverage_reports`。
 
 ## 开发
 
@@ -173,7 +190,7 @@ dist/jlpt_coverage.ankiaddon
 uv run scripts/extract_jlpt_vocab.py
 ```
 
-该命令只会把工具需要的字段写入 `data/jlpt_vocab.csv`。
+该命令只会把工具需要的字段写入 `jlpt_coverage/data/jlpt_vocab.csv`。
 
 GitHub Actions 会在 push 和 pull request 时构建并校验插件。推送 `v*` tag 时，还会把 `jlpt_coverage.ankiaddon` 直接上传到 GitHub Release。
 
