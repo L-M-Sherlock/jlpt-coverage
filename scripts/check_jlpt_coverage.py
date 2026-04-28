@@ -18,6 +18,7 @@ from jlpt_converge.core import (
     summarize,
     vocab_status_rows,
 )
+from jlpt_converge.localization import configure_translations
 from jlpt_converge.reports import write_vocab_status_report
 from jlpt_converge.sqlite_collection import collect_anki_keys, copy_collection
 
@@ -67,6 +68,12 @@ def parse_args() -> argparse.Namespace:
         help="Only count notes with at least one non-suspended card.",
     )
     parser.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR, help="Report output directory")
+    parser.add_argument(
+        "--language",
+        choices=("auto", "en_US", "zh_CN", "en", "zh"),
+        default="auto",
+        help="Output language. Default: auto.",
+    )
     parser.add_argument("--no-report-files", action="store_true", help="Print only; do not write CSV report")
     parser.add_argument("--show-missing", type=int, default=10, help="Print this many missing words per level")
     parser.add_argument("--keep-copy", action="store_true", help="Keep the copied Anki DB under reports/collection-copy")
@@ -92,11 +99,11 @@ def main() -> int:
     vocab_path = args.jlpt_vocab.expanduser()
     report_dir = args.report_dir.expanduser()
     note_type_names = tuple(args.note_types or DEFAULT_NOTE_TYPES)
+    translate = configure_translations(args.language)
 
     if not vocab_path.exists():
         raise FileNotFoundError(
-            f"Missing project-local JLPT vocabulary file: {vocab_path}\n"
-            "Run: python3 scripts/extract_jlpt_vocab.py"
+            translate("cli-missing-vocab", path=str(vocab_path))
         )
 
     db_copy, temp_ctx = copy_collection(
@@ -132,7 +139,15 @@ def main() -> int:
             "anki_stats": anki_stats,
             "generated_at": datetime.now().isoformat(timespec="seconds"),
         }
-        print(format_summary(summary, metadata, missing_rows, show_missing=args.show_missing))
+        print(
+            format_summary(
+                summary,
+                metadata,
+                missing_rows,
+                show_missing=args.show_missing,
+                translate=translate,
+            )
+        )
 
         if not args.no_report_files:
             status_path = write_vocab_status_report(
@@ -140,7 +155,7 @@ def main() -> int:
                 status_rows,
             )
             print()
-            print("已写入报告:")
+            print(translate("cli-report-written"))
             print(f"- {status_path}")
     finally:
         if temp_ctx is not None:

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import csv
-from html import escape
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
+from html import escape
 from pathlib import Path
 
 from .text import frequency_sort_key, level_sort_key, text_keys
@@ -11,6 +12,7 @@ from .text import frequency_sort_key, level_sort_key, text_keys
 
 DEFAULT_NOTE_TYPES = ("Lapis", "Kaishi 1.5k", "Kaishi 1.5k zh-CH")
 JLPT_VOCAB_SOURCE_URL = "https://github.com/5mdld/anki-jlpt-decks"
+Translator = Callable[..., str]
 
 NOTE_TYPE_FIELD_RULES = {
     "Kaishi 1.5k": {
@@ -26,6 +28,12 @@ NOTE_TYPE_FIELD_RULES = {
         "reading": {"expressionreading"},
     },
 }
+
+
+def translate_text(translate: Translator | None, key: str, default: str, **kwargs: object) -> str:
+    if translate is None:
+        return default
+    return str(translate(key, default=default, **kwargs))
 
 
 @dataclass(frozen=True)
@@ -294,53 +302,78 @@ def format_summary(
     missing_rows: list[dict[str, str]] | None = None,
     *,
     show_missing: int = 0,
+    translate: Translator | None = None,
 ) -> str:
+    note_types = ", ".join(metadata.get("note_type_names", ()))
+    profile_dir = str(metadata.get("profile_dir", ""))
+    match_mode = str(metadata.get("match_mode", ""))
     lines = [
-        "JLPT 覆盖率",
-        f"- Anki profile: {metadata.get('profile_dir', '')}",
-        f"- 已统计 note types: {', '.join(metadata.get('note_type_names', ()))}",
-        f"- 匹配模式: {metadata.get('match_mode', '')}",
+        translate_text(translate, "report-title", "JLPT Coverage"),
+        f"- {translate_text(translate, 'report-anki-profile', 'Anki profile')}: {profile_dir}",
+        f"- {translate_text(translate, 'report-note-types', 'Note types')}: {note_types}",
+        f"- {translate_text(translate, 'report-match-mode', 'Match mode')}: {match_mode}",
     ]
     if metadata.get("by_frequency"):
-        lines.append("- 频率分档: 已按源词表 frequency 展开")
+        lines.append(
+            f"- {translate_text(translate, 'report-frequency-band', 'Frequency band')}: "
+            f"{translate_text(translate, 'report-frequency-band-value', 'Expanded by source vocabulary frequency')}"
+        )
     if metadata.get("by_interval"):
-        lines.append("- Young/Mature: Young 为 ivl < 21，Mature 为 ivl >= 21")
+        lines.append(
+            f"- {translate_text(translate, 'report-by-interval', 'Young/Mature')}: "
+            f"{translate_text(translate, 'report-by-interval-value', 'Young: ivl < 21; Mature: ivl >= 21')}"
+        )
     anki_stats = metadata.get("anki_stats", {})
     lines.extend(
         [
-            f"- 统计 notes: {anki_stats.get('notes', 0)}",
-            f"- 已学习 notes: {anki_stats.get('learned_notes', 0)}",
-            "- 学习覆盖: 命中至少一张 reps > 0 的 card",
+            f"- {translate_text(translate, 'report-stats-notes', 'Stats notes')}: {anki_stats.get('notes', 0)}",
+            f"- {translate_text(translate, 'report-learned-notes', 'Learned notes')}: "
+            f"{anki_stats.get('learned_notes', 0)}",
+            f"- {translate_text(translate, 'report-learning-coverage', 'Learning coverage')}: "
+            f"{translate_text(translate, 'report-learning-coverage-value', 'Matched at least one card with reps > 0')}",
             "",
         ]
     )
 
     by_interval = bool(metadata.get("by_interval"))
+    level_header = translate_text(translate, "report-level", "Level")
+    frequency_header = translate_text(translate, "report-frequency", "Freq")
+    total_header = translate_text(translate, "report-total", "Total")
+    card_header = translate_text(translate, "report-card", "Card")
+    card_pct_header = translate_text(translate, "report-card-pct", "Card%")
+    learned_header = translate_text(translate, "report-learned", "Learned")
+    learned_pct_header = translate_text(translate, "report-learned-pct", "Learn%")
+    missing_header = translate_text(translate, "report-missing", "Missing")
+    unlearned_header = translate_text(translate, "report-unlearned", "Unlearned")
+    young_header = translate_text(translate, "report-young", "Young")
+    young_pct_header = translate_text(translate, "report-young-pct", "Young%")
+    mature_header = translate_text(translate, "report-mature", "Mature")
+    mature_pct_header = translate_text(translate, "report-mature-pct", "Mature%")
     if metadata.get("by_frequency"):
         header = (
-            f"{'Level':<8}"
-            f"{'Freq':<10}"
-            f"{'Total':>8}"
-            f"{'Card':>9}"
-            f"{'Card%':>9}"
-            f"{'Learned':>10}"
-            f"{'Learn%':>9}"
-            f"{'Missing':>10}"
-            f"{'Unlearned':>11}"
+            f"{level_header:<8}"
+            f"{frequency_header:<10}"
+            f"{total_header:>8}"
+            f"{card_header:>9}"
+            f"{card_pct_header:>9}"
+            f"{learned_header:>10}"
+            f"{learned_pct_header:>9}"
+            f"{missing_header:>10}"
+            f"{unlearned_header:>11}"
         )
     else:
         header = (
-            f"{'Level':<8}"
-            f"{'Total':>8}"
-            f"{'Card':>9}"
-            f"{'Card%':>9}"
-            f"{'Learned':>10}"
-            f"{'Learn%':>9}"
-            f"{'Missing':>10}"
-            f"{'Unlearned':>11}"
+            f"{level_header:<8}"
+            f"{total_header:>8}"
+            f"{card_header:>9}"
+            f"{card_pct_header:>9}"
+            f"{learned_header:>10}"
+            f"{learned_pct_header:>9}"
+            f"{missing_header:>10}"
+            f"{unlearned_header:>11}"
         )
     if by_interval:
-        header += f"{'Young':>8}{'Young%':>9}{'Mature':>8}{'Mature%':>9}"
+        header += f"{young_header:>8}{young_pct_header:>9}{mature_header:>8}{mature_pct_header:>9}"
     lines.append(header)
 
     for row in summary:
@@ -380,12 +413,27 @@ def format_summary(
         lines.extend(
             [
                 "",
-                "注意: 当前 JLPT 源词表将 N4 和 N5 合并为 N4+N5，无法仅凭该文件拆成独立 N4/N5。",
+                translate_text(
+                    translate,
+                    "report-n4n5-warning",
+                    "Note: The current JLPT source vocabulary merges N4 and N5 into N4+N5; "
+                    "this file cannot reliably split them into separate N4/N5 levels.",
+                ),
             ]
         )
 
     if show_missing > 0 and missing_rows:
-        lines.extend(["", f"每级前 {show_missing} 个缺词:"])
+        lines.extend(
+            [
+                "",
+                translate_text(
+                    translate,
+                    "report-top-missing",
+                    f"Top {show_missing} missing words by level:",
+                    count=show_missing,
+                ),
+            ]
+        )
         by_level: dict[str, list[dict[str, str]]] = defaultdict(list)
         for row in missing_rows:
             by_level[row["level"]].append(row)
@@ -400,6 +448,7 @@ def format_summary(
 def format_summary_html(
     summary: list[dict[str, object]],
     metadata: dict[str, object],
+    translate: Translator | None = None,
 ) -> str:
     by_frequency = bool(metadata.get("by_frequency"))
     by_interval = bool(metadata.get("by_interval"))
@@ -436,24 +485,60 @@ def format_summary_html(
         }
 
     meta_rows = [
-        ("Anki profile", metadata.get("profile_dir", "")),
-        ("Note types", note_types),
-        ("匹配模式", metadata.get("match_mode", "")),
-        ("统计 notes", anki_stats.get("notes", 0)),
-        ("已学习 notes", anki_stats.get("learned_notes", 0)),
-        ("学习覆盖", "命中至少一张 reps > 0 的 card"),
+        (translate_text(translate, "report-anki-profile", "Anki profile"), metadata.get("profile_dir", "")),
+        (translate_text(translate, "report-note-types", "Note types"), note_types),
+        (translate_text(translate, "report-match-mode", "Match mode"), metadata.get("match_mode", "")),
+        (translate_text(translate, "report-stats-notes", "Stats notes"), anki_stats.get("notes", 0)),
+        (translate_text(translate, "report-learned-notes", "Learned notes"), anki_stats.get("learned_notes", 0)),
+        (
+            translate_text(translate, "report-learning-coverage", "Learning coverage"),
+            translate_text(translate, "report-learning-coverage-value", "Matched at least one card with reps > 0"),
+        ),
     ]
     if by_frequency:
-        meta_rows.insert(3, ("频率分档", "按源词表 frequency 展开"))
+        meta_rows.insert(
+            3,
+            (
+                translate_text(translate, "report-frequency-band", "Frequency band"),
+                translate_text(
+                    translate,
+                    "report-frequency-band-value",
+                    "Expanded by source vocabulary frequency",
+                ),
+            ),
+        )
     if by_interval:
-        meta_rows.insert(4 if by_frequency else 3, ("Young/Mature", "Young: ivl < 21; Mature: ivl >= 21"))
+        meta_rows.insert(
+            4 if by_frequency else 3,
+            (
+                translate_text(translate, "report-by-interval", "Young/Mature"),
+                translate_text(translate, "report-by-interval-value", "Young: ivl < 21; Mature: ivl >= 21"),
+            ),
+        )
 
-    headers = ["Level"]
+    headers = [translate_text(translate, "report-level", "Level")]
     if by_frequency:
-        headers.append("Freq")
-    headers.extend(["Total", "Card", "Card%", "Learned", "Learn%", "Missing", "Unlearned"])
+        headers.append(translate_text(translate, "report-frequency", "Freq"))
+    headers.extend(
+        [
+            translate_text(translate, "report-total", "Total"),
+            translate_text(translate, "report-card", "Card"),
+            translate_text(translate, "report-card-pct", "Card%"),
+            translate_text(translate, "report-learned", "Learned"),
+            translate_text(translate, "report-learned-pct", "Learn%"),
+            translate_text(translate, "report-missing", "Missing"),
+            translate_text(translate, "report-unlearned", "Unlearned"),
+        ]
+    )
     if by_interval:
-        headers.extend(["Young", "Young%", "Mature", "Mature%"])
+        headers.extend(
+            [
+                translate_text(translate, "report-young", "Young"),
+                translate_text(translate, "report-young-pct", "Young%"),
+                translate_text(translate, "report-mature", "Mature"),
+                translate_text(translate, "report-mature-pct", "Mature%"),
+            ]
+        )
 
     def td(value: object, *, numeric: bool = False) -> str:
         klass = ' class="num"' if numeric else ""
@@ -502,15 +587,13 @@ def format_summary_html(
     warning_html = ""
     if any(row["level"] == "N4+N5" for row in summary):
         warning_html = (
-            '<p class="note">注意: 当前 JLPT 源词表将 N4 和 N5 合并为 '
-            "N4+N5，无法仅凭该文件拆成独立 N4/N5。</p>"
+            f'<p class="note">{escape(translate_text(translate, "report-n4n5-warning", "Note: The current JLPT source vocabulary merges N4 and N5 into N4+N5; this file cannot reliably split them into separate N4/N5 levels."))}</p>'
         )
 
+    source_link = f'<a href="{JLPT_VOCAB_SOURCE_URL}">5mdld/anki-jlpt-decks</a>'
     source_html = (
         '<p class="source">'
-        '词表来源与致谢: '
-        f'<a href="{JLPT_VOCAB_SOURCE_URL}">5mdld/anki-jlpt-decks</a>'
-        " 提供 eggrolls JLPT10k 词汇数据。"
+        f'{translate_text(translate, "report-source", f"Vocabulary source and acknowledgements: {source_link} provides the eggrolls JLPT10k vocabulary data.", link=source_link)}'
         "</p>"
     )
 
@@ -594,7 +677,7 @@ def format_summary_html(
   </style>
 </head>
 <body>
-  <h2>JLPT 覆盖率</h2>
+  <h2>{escape(translate_text(translate, "report-title", "JLPT Coverage"))}</h2>
   <table class="meta">
     {meta_html}
   </table>

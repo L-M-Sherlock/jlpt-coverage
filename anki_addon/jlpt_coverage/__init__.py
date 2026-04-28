@@ -25,6 +25,15 @@ from aqt.utils import showInfo, showWarning
 
 
 try:
+    from .i18n import t
+except ImportError:
+    addon_dir = Path(__file__).resolve().parent
+    if str(addon_dir) not in sys.path:
+        sys.path.insert(0, str(addon_dir))
+    from i18n import t
+
+
+try:
     from .jlpt_converge.core import (
         DEFAULT_NOTE_TYPES,
         NOTE_TYPE_FIELD_RULES,
@@ -60,12 +69,11 @@ PACKAGE_VOCAB_PATH = ADDON_DIR / "data" / "jlpt_vocab.csv"
 SOURCE_VOCAB_PATH = ADDON_DIR.parents[1] / "data" / "jlpt_vocab.csv"
 
 MODE_CHOICES = (
-    ("word-or-reading", "字形或读音"),
-    ("reading", "只匹配读音"),
-    ("word", "只匹配字形"),
+    ("word-or-reading", "mode-word-or-reading"),
+    ("reading", "mode-reading"),
+    ("word", "mode-word"),
 )
 NONE_FIELD = ""
-NONE_FIELD_LABEL = "不使用"
 
 
 def config() -> dict:
@@ -173,7 +181,7 @@ def collect_anki_keys_from_collection(
 ) -> tuple[MatchKeys, dict[str, int]]:
     missing_rules = sorted(set(note_type_names) - set(field_rules))
     if missing_rules:
-        raise ValueError(f"Missing field rules for note types: {', '.join(missing_rules)}")
+        raise ValueError(t("error-missing-field-rules", names=", ".join(missing_rules)))
 
     models = {}
     missing_note_types = []
@@ -184,7 +192,7 @@ def collect_anki_keys_from_collection(
         else:
             models[note_type_name] = model
     if missing_note_types:
-        raise ValueError(f"Missing note types in current collection: {', '.join(missing_note_types)}")
+        raise ValueError(t("error-missing-note-types", names=", ".join(missing_note_types)))
 
     term_keys: set[str] = set()
     reading_keys: set[str] = set()
@@ -270,7 +278,7 @@ def collect_anki_keys_from_collection(
 class CoverageDialog(QDialog):
     def __init__(self) -> None:
         super().__init__(mw)
-        self.setWindowTitle("JLPT Coverage")
+        self.setWindowTitle(t("window-title"))
         self.resize(920, 620)
         self.summary: list[dict[str, object]] = []
         self.missing_rows: list[dict[str, str]] = []
@@ -285,7 +293,7 @@ class CoverageDialog(QDialog):
     def _setup_ui(self) -> None:
         layout = QVBoxLayout()
 
-        layout.addWidget(QLabel("Note types"))
+        layout.addWidget(QLabel(t("note-types")))
         note_type_scroll = QScrollArea()
         note_type_scroll.setWidgetResizable(True)
         note_type_scroll.setMinimumHeight(88)
@@ -300,10 +308,10 @@ class CoverageDialog(QDialog):
         if not model_pairs:
             model_pairs = [(name, {"flds": []}) for name in sorted(set(DEFAULT_NOTE_TYPES))]
         header_row = QHBoxLayout()
-        header_row.addWidget(QLabel("Use"), 0)
-        header_row.addWidget(QLabel("Note type"), 3)
-        header_row.addWidget(QLabel("字形字段"), 2)
-        header_row.addWidget(QLabel("读音字段"), 2)
+        header_row.addWidget(QLabel(t("use")), 0)
+        header_row.addWidget(QLabel(t("note-type")), 3)
+        header_row.addWidget(QLabel(t("term-field")), 2)
+        header_row.addWidget(QLabel(t("reading-field")), 2)
         note_type_layout.addLayout(header_row)
 
         for name, model in model_pairs:
@@ -315,7 +323,7 @@ class CoverageDialog(QDialog):
             term_combo = QComboBox()
             reading_combo = QComboBox()
             for combo in (term_combo, reading_combo):
-                combo.addItem(NONE_FIELD_LABEL, NONE_FIELD)
+                combo.addItem(t("field-not-used"), NONE_FIELD)
                 for field_name in field_names_from_model(model):
                     combo.addItem(field_name, field_name)
 
@@ -341,37 +349,37 @@ class CoverageDialog(QDialog):
         layout.addWidget(note_type_scroll)
 
         option_row = QHBoxLayout()
-        option_row.addWidget(QLabel("Match mode"))
+        option_row.addWidget(QLabel(t("match-mode")))
         self.mode_combo = QComboBox()
         configured_mode = config().get("match_mode", "word-or-reading")
-        for value, label in MODE_CHOICES:
-            self.mode_combo.addItem(label, value)
+        for value, label_key in MODE_CHOICES:
+            self.mode_combo.addItem(t(label_key), value)
             if value == configured_mode:
                 self.mode_combo.setCurrentIndex(self.mode_combo.count() - 1)
         option_row.addWidget(self.mode_combo)
 
-        self.by_frequency_checkbox = QCheckBox("按频率分档")
+        self.by_frequency_checkbox = QCheckBox(t("by-frequency"))
         self.by_frequency_checkbox.setChecked(bool(config().get("by_frequency", False)))
         option_row.addWidget(self.by_frequency_checkbox)
 
-        self.by_interval_checkbox = QCheckBox("统计 Young/Mature")
+        self.by_interval_checkbox = QCheckBox(t("by-interval"))
         self.by_interval_checkbox.setChecked(bool(config().get("by_interval", False)))
         option_row.addWidget(self.by_interval_checkbox)
 
-        self.exclude_suspended_checkbox = QCheckBox("排除暂停卡片")
+        self.exclude_suspended_checkbox = QCheckBox(t("exclude-suspended"))
         self.exclude_suspended_checkbox.setChecked(bool(config().get("exclude_suspended", False)))
         option_row.addWidget(self.exclude_suspended_checkbox)
         option_row.addStretch()
         layout.addLayout(option_row)
 
         button_row = QHBoxLayout()
-        self.run_button = QPushButton("Run")
+        self.run_button = QPushButton(t("run"))
         self.run_button.clicked.connect(self.run_analysis)
         button_row.addWidget(self.run_button)
-        self.save_button = QPushButton("Save Defaults")
+        self.save_button = QPushButton(t("save-defaults"))
         self.save_button.clicked.connect(self.save_defaults)
         button_row.addWidget(self.save_button)
-        self.export_button = QPushButton("Export CSV")
+        self.export_button = QPushButton(t("export-csv"))
         self.export_button.clicked.connect(self.export_reports)
         self.export_button.setEnabled(False)
         button_row.addWidget(self.export_button)
@@ -394,16 +402,16 @@ class CoverageDialog(QDialog):
 
     def selected_field_rules(self, note_type_names: tuple[str, ...], match_mode: str) -> dict[str, dict[str, set[str]]]:
         if not note_type_names:
-            raise ValueError("请至少选择一个 note type。")
+            raise ValueError(t("error-select-note-type"))
 
         rules: dict[str, dict[str, set[str]]] = {}
         for note_type_name in note_type_names:
             term_field = self.term_field_combos[note_type_name].currentData() or ""
             reading_field = self.reading_field_combos[note_type_name].currentData() or ""
             if match_mode in ("word", "word-or-reading") and not term_field:
-                raise ValueError(f"{note_type_name} 需要选择字形字段。")
+                raise ValueError(t("error-term-field-required", note_type=note_type_name))
             if match_mode in ("reading", "word-or-reading") and not reading_field:
-                raise ValueError(f"{note_type_name} 需要选择读音字段。")
+                raise ValueError(t("error-reading-field-required", note_type=note_type_name))
             rules[note_type_name] = {
                 "term": {term_field.strip().lower()} if term_field else set(),
                 "reading": {reading_field.strip().lower()} if reading_field else set(),
@@ -429,12 +437,12 @@ class CoverageDialog(QDialog):
 
     def save_defaults(self) -> None:
         mw.addonManager.writeConfig(__name__, self.selected_config())
-        showInfo("JLPT Coverage defaults saved.")
+        showInfo(t("defaults-saved"))
 
     def run_analysis(self) -> None:
         path = vocab_path()
         if not path.exists():
-            showWarning(f"Missing JLPT vocabulary CSV: {path}")
+            showWarning(t("error-missing-jlpt-vocab", path=str(path)))
             return
 
         try:
@@ -481,7 +489,7 @@ class CoverageDialog(QDialog):
                 "anki_stats": anki_stats,
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
             }
-            self.output.setHtml(format_summary_html(self.summary, self.metadata))
+            self.output.setHtml(format_summary_html(self.summary, self.metadata, translate=t))
             self.export_button.setEnabled(True)
         except Exception as exc:
             showWarning(str(exc))
@@ -490,17 +498,17 @@ class CoverageDialog(QDialog):
 
     def export_reports(self) -> None:
         if not self.summary:
-            showWarning("Run coverage analysis before exporting.")
+            showWarning(t("error-run-before-export"))
             return
         default_dir = Path(mw.pm.profileFolder()) / "jlpt_coverage_reports"
-        directory = QFileDialog.getExistingDirectory(self, "Export JLPT Vocabulary Status", str(default_dir))
+        directory = QFileDialog.getExistingDirectory(self, t("export-dialog-title"), str(default_dir))
         if not directory:
             return
         status_path = write_vocab_status_report(
             Path(directory),
             self.status_rows,
         )
-        showInfo(f"CSV exported:\n{status_path}")
+        showInfo(t("csv-exported", path=str(status_path)))
 
 
 def show_coverage_dialog() -> None:
@@ -509,7 +517,7 @@ def show_coverage_dialog() -> None:
 
 
 def setup_menu() -> None:
-    action = QAction("JLPT Coverage", mw)
+    action = QAction(t("window-title"), mw)
     action.triggered.connect(show_coverage_dialog)
     mw.form.menuTools.addAction(action)
 

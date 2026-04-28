@@ -27,6 +27,12 @@
 
 ## 第一次准备词表
 
+首次克隆仓库后先初始化本地化依赖:
+
+```bash
+git submodule update --init --recursive
+```
+
 ```bash
 python3 scripts/extract_jlpt_vocab.py
 ```
@@ -48,6 +54,8 @@ python3 scripts/check_jlpt_coverage.py --match-mode word-or-reading
 python3 scripts/check_jlpt_coverage.py --by-frequency
 python3 scripts/check_jlpt_coverage.py --by-interval
 python3 scripts/check_jlpt_coverage.py --exclude-suspended
+python3 scripts/check_jlpt_coverage.py --language en_US
+python3 scripts/check_jlpt_coverage.py --language zh_CN
 python3 scripts/check_jlpt_coverage.py --note-type Lapis --note-type "Kaishi 1.5k" --note-type "Kaishi 1.5k zh-CH"
 ```
 
@@ -86,6 +94,8 @@ dist/jlpt_coverage.ankiaddon
 安装到 Anki 后，菜单入口是 `Tools -> JLPT Coverage`。插件使用当前打开的 Anki 集合，通过 Anki add-on API 读取 note/card 信息，不写入集合；导出 CSV 时会让你选择输出目录。
 
 导出的 CSV 字段为 `level,frequency,word_plain,reading,missing,unlearned`。`missing=1` 表示没有匹配到卡片；`unlearned=1` 表示已经匹配到卡片，但还没有命中任何 `reps > 0` 的 card。
+
+插件支持中文和英文界面，语言跟随 Anki 的默认语言。CLI 可通过 `--language auto|en_US|zh_CN` 指定输出语言。项目使用 `python_i18n` git submodule 加载本地化 JSON。
 
 ## 致谢
 
