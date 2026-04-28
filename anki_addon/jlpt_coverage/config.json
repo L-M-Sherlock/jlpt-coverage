@@ -1,0 +1,25 @@
+{
+  "note_types": [
+    "Lapis",
+    "Kaishi 1.5k",
+    "Kaishi 1.5k zh-CH"
+  ],
+  "field_mappings": {
+    "Lapis": {
+      "term": "Expression",
+      "reading": "ExpressionReading"
+    },
+    "Kaishi 1.5k zh-CH": {
+      "term": "Word",
+      "reading": "Word Reading"
+    },
+    "Kaishi 1.5k": {
+      "term": "Word",
+      "reading": "Word Reading"
+    }
+  },
+  "match_mode": "word-or-reading",
+  "by_frequency": false,
+  "by_interval": false,
+  "exclude_suspended": false
+}
