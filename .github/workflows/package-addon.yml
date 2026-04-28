@@ -1,0 +1,70 @@
+name: Package Anki Add-on
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Build .ankiaddon
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile Python sources
+        run: |
+          python -m py_compile \
+            jlpt_coverage/*.py \
+            scripts/*.py \
+            anki_addon/jlpt_coverage/__init__.py \
+            anki_addon/jlpt_coverage/i18n.py
+
+      - name: Package add-on
+        run: python scripts/package_anki_addon.py
+
+      - name: Validate add-on archive
+        run: |
+          python - <<'PY'
+          import zipfile
+
+          path = "dist/jlpt_coverage.ankiaddon"
+          with zipfile.ZipFile(path) as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"Invalid file in archive: {bad}")
+              required = {
+                  "__init__.py",
+                  "data/jlpt_vocab.csv",
+                  "jlpt_coverage/core.py",
+                  "python_i18n/i18n/__init__.py",
+                  "locale/en_US.json",
+                  "locale/zh_CN.json",
+              }
+              names = set(archive.namelist())
+              missing = sorted(required - names)
+              if missing:
+                  raise SystemExit(f"Missing packaged files: {missing}")
+          PY
+
+      - name: Upload add-on artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jlpt_coverage-ankiaddon
+          path: dist/jlpt_coverage.ankiaddon
+          if-no-files-found: error
