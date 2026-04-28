@@ -34,7 +34,7 @@ except ImportError:
 
 
 try:
-    from .jlpt_converge.core import (
+    from .jlpt_coverage.core import (
         DEFAULT_NOTE_TYPES,
         NOTE_TYPE_FIELD_RULES,
         MatchKeys,
@@ -44,13 +44,13 @@ try:
         summarize,
         vocab_status_rows,
     )
-    from .jlpt_converge.reports import write_vocab_status_report
-    from .jlpt_converge.text import text_keys
+    from .jlpt_coverage.reports import write_vocab_status_report
+    from .jlpt_coverage.text import text_keys
 except ImportError:
     project_root = Path(__file__).resolve().parents[2]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
-    from jlpt_converge.core import (
+    from jlpt_coverage.core import (
         DEFAULT_NOTE_TYPES,
         NOTE_TYPE_FIELD_RULES,
         MatchKeys,
@@ -60,8 +60,8 @@ except ImportError:
         summarize,
         vocab_status_rows,
     )
-    from jlpt_converge.reports import write_vocab_status_report
-    from jlpt_converge.text import text_keys
+    from jlpt_coverage.reports import write_vocab_status_report
+    from jlpt_coverage.text import text_keys
 
 
 ADDON_DIR = Path(__file__).resolve().parent

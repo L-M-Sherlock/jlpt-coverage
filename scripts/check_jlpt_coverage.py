@@ -11,16 +11,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from jlpt_converge.core import (
+from jlpt_coverage.core import (
     DEFAULT_NOTE_TYPES,
     format_summary,
     load_jlpt_entries,
     summarize,
     vocab_status_rows,
 )
-from jlpt_converge.localization import configure_translations
-from jlpt_converge.reports import write_vocab_status_report
-from jlpt_converge.sqlite_collection import collect_anki_keys, copy_collection
+from jlpt_coverage.localization import configure_translations
+from jlpt_coverage.reports import write_vocab_status_report
+from jlpt_coverage.sqlite_collection import collect_anki_keys, copy_collection
 
 
 DEFAULT_PROFILE = Path("/Users/jarrettye/Library/Application Support/Anki2/JarrettYe")

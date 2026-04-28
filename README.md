@@ -4,7 +4,7 @@
 
 ## 项目结构
 
-- `jlpt_converge/`: CLI 和 Anki 插件共用的统计逻辑。
+- `jlpt_coverage/`: CLI 和 Anki 插件共用的统计逻辑。
 - `scripts/`: 命令行脚本和 Anki 插件打包脚本。
 - `anki_addon/jlpt_coverage/`: Anki 插件源代码。
 - `data/`: 项目内的精简 JLPT 词表。
