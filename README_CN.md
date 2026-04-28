@@ -54,7 +54,8 @@ GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。�
 4. 按需要开启频率分档、Young/Mature 分档或排除暂停卡片。
 5. 点击 `Run`。
 6. 如果希望以后复用当前配置，点击 `Save Defaults`。
-7. 点击 `Export CSV` 导出词表状态文件。
+7. 如果只想导出某个等级或目标等级范围，选择导出等级过滤。
+8. 点击 `Export CSV` 导出词表状态文件。
 
 界面会直接加载当前 Anki 集合中的 note type 和字段，避免手动输入名称导致错误。
 
@@ -117,6 +118,8 @@ level,frequency,word_plain,reading,missing,unlearned
 
 这份 CSV 适合用来排序、筛选，并规划后续 mining 或 JLPT 复习。
 
+导出时可以选择全部等级、单独某个等级，或目标等级范围。例如 `到 N2 为止` 会导出 N2、N3、N4+N5 词条。由于源词表合并了 N4 和 N5，所以 N4/N5 相关导出都会映射到 `N4+N5`。
+
 ## 语言支持
 
 插件支持英文和简体中文界面，跟随 Anki 默认语言。
@@ -154,6 +157,8 @@ uv run jlpt-coverage --strict-word
 uv run jlpt-coverage --by-frequency
 uv run jlpt-coverage --by-interval
 uv run jlpt-coverage --exclude-suspended
+uv run jlpt-coverage --export-level N2
+uv run jlpt-coverage --export-up-to N2
 uv run jlpt-coverage --language en_US
 uv run jlpt-coverage --language zh_CN
 ```

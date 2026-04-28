@@ -54,7 +54,8 @@ Open `Tools -> JLPT Coverage` in Anki.
 4. Optionally enable frequency breakdown, Young/Mature breakdown, or suspended-card exclusion.
 5. Click `Run`.
 6. Click `Save Defaults` if you want to reuse the same selections.
-7. Click `Export CSV` to save the vocabulary status file.
+7. Choose an export level filter if you only want one level or a target level range.
+8. Click `Export CSV` to save the vocabulary status file.
 
 The dialog loads note types and fields from the current Anki collection, so you do not need to type note type or field names manually.
 
@@ -117,6 +118,8 @@ level,frequency,word_plain,reading,missing,unlearned
 
 The CSV is designed for sorting, filtering, and planning follow-up mining or JLPT review.
 
+You can export all levels, one specific level, or a target level range. For example, `up to N2` exports N2, N3, and N4+N5 entries. The source vocabulary merges N4 and N5, so N4/N5 export filters map to `N4+N5`.
+
 ## Language Support
 
 The add-on supports English and Simplified Chinese. It follows Anki's default language.
@@ -154,6 +157,8 @@ uv run jlpt-coverage --strict-word
 uv run jlpt-coverage --by-frequency
 uv run jlpt-coverage --by-interval
 uv run jlpt-coverage --exclude-suspended
+uv run jlpt-coverage --export-level N2
+uv run jlpt-coverage --export-up-to N2
 uv run jlpt-coverage --language en_US
 uv run jlpt-coverage --language zh_CN
 ```

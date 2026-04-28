@@ -21,5 +21,6 @@
   "match_mode": "word-or-reading",
   "by_frequency": false,
   "by_interval": false,
-  "exclude_suspended": false
+  "exclude_suspended": false,
+  "export_level_filter": "all"
 }

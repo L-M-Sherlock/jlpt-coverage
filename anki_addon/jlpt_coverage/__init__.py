@@ -73,6 +73,17 @@ MODE_CHOICES = (
     ("reading", "mode-reading"),
     ("word", "mode-word"),
 )
+EXPORT_LEVEL_CHOICES = (
+    ("all", "export-level-all"),
+    ("only:N1", "export-level-only-n1"),
+    ("only:N2", "export-level-only-n2"),
+    ("only:N3", "export-level-only-n3"),
+    ("only:N4+N5", "export-level-only-n4n5"),
+    ("up-to:N1", "export-level-up-to-n1"),
+    ("up-to:N2", "export-level-up-to-n2"),
+    ("up-to:N3", "export-level-up-to-n3"),
+    ("up-to:N4+N5", "export-level-up-to-n4n5"),
+)
 NONE_FIELD = ""
 
 
@@ -379,6 +390,14 @@ class CoverageDialog(QDialog):
         self.save_button = QPushButton(t("save-defaults"))
         self.save_button.clicked.connect(self.save_defaults)
         button_row.addWidget(self.save_button)
+        button_row.addWidget(QLabel(t("export-level-filter")))
+        self.export_level_combo = QComboBox()
+        configured_export_level = config().get("export_level_filter", "all")
+        for value, label_key in EXPORT_LEVEL_CHOICES:
+            self.export_level_combo.addItem(t(label_key), value)
+            if value == configured_export_level:
+                self.export_level_combo.setCurrentIndex(self.export_level_combo.count() - 1)
+        button_row.addWidget(self.export_level_combo)
         self.export_button = QPushButton(t("export-csv"))
         self.export_button.clicked.connect(self.export_reports)
         self.export_button.setEnabled(False)
@@ -433,6 +452,7 @@ class CoverageDialog(QDialog):
             "by_frequency": self.by_frequency_checkbox.isChecked(),
             "by_interval": self.by_interval_checkbox.isChecked(),
             "exclude_suspended": self.exclude_suspended_checkbox.isChecked(),
+            "export_level_filter": self.export_level_combo.currentData(),
         }
 
     def save_defaults(self) -> None:
@@ -507,6 +527,7 @@ class CoverageDialog(QDialog):
         status_path = write_vocab_status_report(
             Path(directory),
             self.status_rows,
+            level_filter=self.export_level_combo.currentData() or "all",
         )
         showInfo(t("csv-exported", path=str(status_path)))
 

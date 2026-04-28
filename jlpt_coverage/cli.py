@@ -14,7 +14,7 @@ from .core import (
     vocab_status_rows,
 )
 from .localization import configure_translations
-from .reports import write_vocab_status_report
+from .reports import JLPT_EXPORT_LEVEL_ALIASES, export_level_filter, write_vocab_status_report
 from .sqlite_collection import collect_anki_keys, copy_collection
 
 
@@ -136,6 +136,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--no-report-files", action="store_true", help="Print only; do not write CSV report")
     parser.add_argument("--show-missing", type=int, default=10, help="Print this many missing words per level")
     parser.add_argument("--keep-copy", action="store_true", help="Keep the copied Anki DB under report-dir")
+    export_group = parser.add_mutually_exclusive_group()
+    export_group.add_argument(
+        "--export-level",
+        choices=tuple(JLPT_EXPORT_LEVEL_ALIASES),
+        help="Only write this JLPT level to the CSV report. N4 and N5 map to N4+N5.",
+    )
+    export_group.add_argument(
+        "--export-up-to",
+        choices=tuple(JLPT_EXPORT_LEVEL_ALIASES),
+        help="Write the target level and easier levels to the CSV report, e.g. N2 exports N2, N3, and N4+N5.",
+    )
     parser.add_argument(
         "--by-frequency",
         action="store_true",
@@ -158,6 +169,11 @@ def run(args: argparse.Namespace) -> int:
     report_dir = args.report_dir.expanduser()
     note_type_names = tuple(args.note_types or DEFAULT_NOTE_TYPES)
     translate = configure_translations(args.language)
+    status_level_filter = "all"
+    if args.export_level:
+        status_level_filter = export_level_filter("only", args.export_level)
+    elif args.export_up_to:
+        status_level_filter = export_level_filter("up-to", args.export_up_to)
 
     if not vocab_path.exists():
         raise FileNotFoundError(
@@ -211,6 +227,7 @@ def run(args: argparse.Namespace) -> int:
             status_path = write_vocab_status_report(
                 report_dir,
                 status_rows,
+                level_filter=status_level_filter,
             )
             print()
             print(translate("cli-report-written"))

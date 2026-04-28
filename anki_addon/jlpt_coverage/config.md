@@ -10,3 +10,4 @@ Configuration fields:
 - `by_frequency`: `true` to split output by the JLPT source frequency band.
 - `by_interval`: `true` to show Young/Mature coverage. Young is `ivl < 21`; Mature is `ivl >= 21`.
 - `exclude_suspended`: `true` to ignore suspended cards when counting coverage.
+- `export_level_filter`: CSV export filter. Use `all`, `only:N2`, or `up-to:N2`.
