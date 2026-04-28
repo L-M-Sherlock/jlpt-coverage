@@ -11,6 +11,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   package:
     name: Build .ankiaddon
@@ -68,3 +71,17 @@ jobs:
           name: jlpt_coverage-ankiaddon
           path: dist/jlpt_coverage.ankiaddon
           if-no-files-found: error
+
+      - name: Upload direct add-on asset to release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" dist/jlpt_coverage.ankiaddon --clobber
+          else
+            gh release create "$TAG_NAME" dist/jlpt_coverage.ankiaddon \
+              --title "$TAG_NAME" \
+              --notes "Automated JLPT Coverage add-on build."
+          fi
