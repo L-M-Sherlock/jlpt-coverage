@@ -1,102 +1,191 @@
-# JLPT Coverage Checker
+# JLPT Coverage for Anki
 
-检查 Anki 集合里日语卡片对 eggrolls JLPT10k 词表的覆盖率。
+[Chinese README](README_CN.md)
 
-## 项目结构
+JLPT Coverage is an Anki add-on for Japanese learners who mine vocabulary from native content and also want a clear view of their JLPT N1-N5 vocabulary coverage.
 
-- `jlpt_coverage/`: CLI 和 Anki 插件共用的统计逻辑。
-- `scripts/`: 命令行脚本和 Anki 插件打包脚本。
-- `anki_addon/jlpt_coverage/`: Anki 插件源代码。
-- `data/`: 项目内的精简 JLPT 词表。
-- `reports/`: CLI 生成的词表状态 CSV。
-- `dist/`: 打包出的 `.ankiaddon` 文件。
+The main use case is the workflow described in the [Donkuri mining guide](https://donkuri.github.io/learn-japanese/mining/): you use tools such as Yomitan and Anki to create cards from visual novels, anime, novels, manga, games, or other immersion material. This add-on does not replace mining. It helps you answer a separate question: how much of a JLPT vocabulary list have you already mined, reviewed, or still missed?
 
-默认行为:
+## What It Does
 
-- 先复制 Anki profile 下的 `collection.anki2` 及同名 `-wal`/`-shm`，只连接副本。
-- 默认统计 `Lapis`、`Kaishi 1.5k` 和 `Kaishi 1.5k zh-CH` 三个 note type。
-- 匹配字段只使用:
-  - `Kaishi 1.5k`: 字形 `Word`，读音 `Word Reading`
-  - `Kaishi 1.5k zh-CH`: 字形 `Word`，读音 `Word Reading`
-  - `Lapis`: 字形 `Expression`，读音 `ExpressionReading`
-  - JLPT 词表: 字形 `word_plain`，读音 `reading`
-- 只读取项目内的 `data/jlpt_vocab.csv`，不会在覆盖率检查时读取原始 JLPT `notes.csv`。
-- 同时输出卡片覆盖率和学习覆盖率。学习覆盖表示命中的 Anki note 至少有一张 card 的 `reps > 0`。
-- 可选输出 Young/Mature 覆盖率。Young 使用 Anki 的 interval 口径 `ivl < 21`；Mature 使用 `ivl >= 21`。
-- 控制台输出覆盖率汇总；CSV 导出只写一份 `jlpt_vocab_status_*.csv`，包含 JLPT 词表和 `missing` / `unlearned` 状态。
+- Shows JLPT coverage for selected Anki note types.
+- Supports mining-oriented note types such as `Lapis`, `Kaishi 1.5k`, and `Kaishi 1.5k zh-CH`.
+- Lets you configure term and reading fields per note type from the fields that already exist in your collection.
+- Reports both card coverage and learning coverage.
+- Can split results by source frequency band.
+- Can show Young and Mature coverage using Anki's interval convention.
+- Exports one vocabulary status CSV with missing and unlearned flags.
+- Bundles the project-local JLPT vocabulary CSV, so the add-on does not read the original source deck files at runtime.
 
-## 第一次准备词表
+The add-on reads your currently open Anki collection through Anki's add-on API and does not write to the collection.
 
-首次克隆仓库后先初始化本地化依赖:
+## Who This Is For
+
+This tool is intended for learners who:
+
+- Mine Japanese vocabulary into Anki from immersion material.
+- Use Lapis, Kaishi, or another note type with separate term and reading fields.
+- Prefer continuing their mining workflow instead of switching to a premade JLPT deck.
+- Still want to know which JLPT vocabulary items are already represented in their mining cards.
+- Want to identify JLPT gaps before or during exam preparation.
+
+It is a coverage and reporting tool, not an SRS scheduler, a JLPT course, or a replacement vocabulary deck.
+
+## Installation
+
+Download `jlpt_coverage.ankiaddon` from the latest [GitHub Release](https://github.com/L-M-Sherlock/jlpt-coverage/releases), then install it in Anki:
+
+1. Open Anki.
+2. Go to `Tools -> Add-ons`.
+3. Choose `Install from file...`.
+4. Select `jlpt_coverage.ankiaddon`.
+5. Restart Anki.
+6. Open `Tools -> JLPT Coverage`.
+
+GitHub Actions artifacts are always wrapped by GitHub in an outer `.zip` file. If you download a workflow artifact instead of a Release asset, unzip it first and install the `.ankiaddon` file inside.
+
+## Basic Use
+
+Open `Tools -> JLPT Coverage` in Anki.
+
+1. Select the note types to include.
+2. Choose the term field and reading field for each selected note type.
+3. Choose a match mode.
+4. Optionally enable frequency breakdown, Young/Mature breakdown, or suspended-card exclusion.
+5. Click `Run`.
+6. Click `Save Defaults` if you want to reuse the same selections.
+7. Click `Export CSV` to save the vocabulary status file.
+
+The dialog loads note types and fields from the current Anki collection, so you do not need to type note type or field names manually.
+
+## Default Field Mappings
+
+The add-on ships with defaults for the note types this project was built around:
+
+| Note type | Term field | Reading field |
+| --- | --- | --- |
+| `Lapis` | `Expression` | `ExpressionReading` |
+| `Kaishi 1.5k` | `Word` | `Word Reading` |
+| `Kaishi 1.5k zh-CH` | `Word` | `Word Reading` |
+
+You can select different fields in the UI for any note type in your collection.
+
+## Match Modes
+
+| Mode | Meaning | Best for |
+| --- | --- | --- |
+| `word-or-reading` | A JLPT entry is covered if either the written form or the reading matches. | Default mining coverage checks. |
+| `reading` | Only readings are compared. | Avoiding missed matches caused by spelling, kana/kanji, or orthographic differences. |
+| `word` | Only written forms are compared. | Stricter checks where the exact written vocabulary item matters more. |
+
+The JLPT side uses `word_plain` as the written form and `reading` as the reading.
+
+## Report Metrics
+
+| Metric | Meaning |
+| --- | --- |
+| `Total` | Number of JLPT vocabulary entries in that level or bucket. |
+| `Card` / `Card%` | Entries that match at least one selected Anki note. |
+| `Learned` / `Learn%` | Entries that match at least one selected Anki note with a card whose `reps > 0`. |
+| `Missing` | Entries with no matching selected Anki note. |
+| `Unlearned` | Entries that match a selected note but have no matching card with `reps > 0`. |
+| `Young` / `Young%` | Entries with at least one matching card whose `ivl < 21`. |
+| `Mature` / `Mature%` | Entries with at least one matching card whose `ivl >= 21`. |
+
+Young and Mature follow Anki's own interval-based convention.
+
+## Frequency Breakdown
+
+When enabled, the report expands each JLPT level by the frequency band found in the source vocabulary data.
+
+Current source behavior:
+
+- N1 uses high, medium, and low frequency bands.
+- N2 and N3 use high and lower-frequency bands.
+- N4 and N5 are merged by the source deck as `N4+N5`, and cannot be reliably split into separate N4 and N5 levels from this file alone.
+
+## CSV Export
+
+`Export CSV` writes one file containing the JLPT vocabulary list plus status flags:
+
+```text
+level,frequency,word_plain,reading,missing,unlearned
+```
+
+- `missing=1` means no selected Anki note matched that JLPT entry.
+- `unlearned=1` means the entry matched a selected note, but no matching card has `reps > 0`.
+
+The CSV is designed for sorting, filtering, and planning follow-up mining or JLPT review.
+
+## Language Support
+
+The add-on supports English and Simplified Chinese. It follows Anki's default language.
+
+Localization is implemented with the bundled `python_i18n` git submodule and JSON locale files under `anki_addon/jlpt_coverage/locale/`.
+
+## Command Line Tool
+
+The Anki add-on is the primary interface. A CLI is also available for local checks and development:
+
+```bash
+uv run scripts/check_jlpt_coverage.py
+```
+
+Common options:
+
+```bash
+uv run scripts/check_jlpt_coverage.py --reading-only
+uv run scripts/check_jlpt_coverage.py --strict-word
+uv run scripts/check_jlpt_coverage.py --by-frequency
+uv run scripts/check_jlpt_coverage.py --by-interval
+uv run scripts/check_jlpt_coverage.py --exclude-suspended
+uv run scripts/check_jlpt_coverage.py --language en_US
+uv run scripts/check_jlpt_coverage.py --language zh_CN
+```
+
+The CLI copies `collection.anki2` and related SQLite sidecar files before connecting to SQLite. It does not connect directly to the live collection database.
+
+## Development
+
+Install [uv](https://docs.astral.sh/uv/), then clone the repository and initialize submodules:
 
 ```bash
 git submodule update --init --recursive
+uv sync
 ```
+
+Build and validate the add-on:
 
 ```bash
-python3 scripts/extract_jlpt_vocab.py
+uv run scripts/package_anki_addon.py
+uv run scripts/validate_anki_addon.py
 ```
 
-这会从原始 eggrolls `notes.csv` 中提取必要字段到 `data/jlpt_vocab.csv`。
-
-## 检查覆盖率
-
-```bash
-python3 scripts/check_jlpt_coverage.py
-```
-
-常用参数:
-
-```bash
-python3 scripts/check_jlpt_coverage.py --reading-only
-python3 scripts/check_jlpt_coverage.py --strict-word
-python3 scripts/check_jlpt_coverage.py --match-mode word-or-reading
-python3 scripts/check_jlpt_coverage.py --by-frequency
-python3 scripts/check_jlpt_coverage.py --by-interval
-python3 scripts/check_jlpt_coverage.py --exclude-suspended
-python3 scripts/check_jlpt_coverage.py --language en_US
-python3 scripts/check_jlpt_coverage.py --language zh_CN
-python3 scripts/check_jlpt_coverage.py --note-type Lapis --note-type "Kaishi 1.5k" --note-type "Kaishi 1.5k zh-CH"
-```
-
-匹配模式:
-
-- 默认 `word-or-reading`: 字形或读音任一命中就算覆盖。
-- `--reading-only`: 只比较读音，适合避免字形差异造成遗漏。
-- `--strict-word` / `--word-only`: 只比较字形，统计更严格。
-
-频率分档:
-
-- `--by-frequency`: 在 JLPT 级别内继续按源词表频率分档展开。
-- 源词表里 N1 是 `高频` / `中频` / `低频`；N2 和 N3 是 `高频` / `中低频`；N4+N5 没有频率分档，会显示为 `未分频`。
-
-Young/Mature:
-
-- `--by-interval`: 每个 level 额外显示 Young 和 Mature 词条数及比例。
-- Young 为命中至少一张 `ivl < 21` 的 card；Mature 为命中至少一张 `ivl >= 21` 的 card。比例分母是该 level 的 JLPT 总词条数。
-
-说明: 这份 eggrolls 源词表把 N4 和 N5 合并在 `N4+N5` 牌组里，没有额外字段可稳定拆分，所以脚本会报告 `N4+N5` 合并覆盖率。
-
-## Anki 插件
-
-打包插件:
-
-```bash
-python3 scripts/package_anki_addon.py
-```
-
-输出文件:
+The output is:
 
 ```text
 dist/jlpt_coverage.ankiaddon
 ```
 
-安装到 Anki 后，菜单入口是 `Tools -> JLPT Coverage`。插件使用当前打开的 Anki 集合，通过 Anki add-on API 读取 note/card 信息，不写入集合；导出 CSV 时会让你选择输出目录。
+Extract the project-local vocabulary CSV from the original source deck:
 
-导出的 CSV 字段为 `level,frequency,word_plain,reading,missing,unlearned`。`missing=1` 表示没有匹配到卡片；`unlearned=1` 表示已经匹配到卡片，但还没有命中任何 `reps > 0` 的 card。
+```bash
+uv run scripts/extract_jlpt_vocab.py
+```
 
-插件支持中文和英文界面，语言跟随 Anki 的默认语言。CLI 可通过 `--language auto|en_US|zh_CN` 指定输出语言。项目使用 `python_i18n` git submodule 加载本地化 JSON。
+This writes only the columns needed by the tool into `data/jlpt_vocab.csv`.
 
-## 致谢
+The GitHub Actions workflow builds and validates the add-on on pushes and pull requests. For `v*` tags, it also uploads `jlpt_coverage.ankiaddon` directly to the GitHub Release.
 
-JLPT 词汇数据来自 [5mdld/anki-jlpt-decks](https://github.com/5mdld/anki-jlpt-decks)。
+## Vocabulary Data and Acknowledgements
+
+JLPT vocabulary data is extracted from the eggrolls JLPT10k deck in [5mdld/anki-jlpt-decks](https://github.com/5mdld/anki-jlpt-decks).
+
+This project keeps only the fields needed for coverage reporting:
+
+- `level`
+- `frequency`
+- `word_plain`
+- `reading`
+
+Thanks to the maintainers of that deck and to the authors of the tools and note types used by the Japanese mining community.

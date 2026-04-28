@@ -56,6 +56,6 @@
     "report-source": "Vocabulary source and acknowledgements: %{link} provides the eggrolls JLPT10k vocabulary data.",
     "report-top-missing": "Top %{count} missing words by level:",
     "cli-report-written": "Report written:",
-    "cli-missing-vocab": "Missing project-local JLPT vocabulary file: %{path}\nRun: python3 scripts/extract_jlpt_vocab.py"
+    "cli-missing-vocab": "Missing project-local JLPT vocabulary file: %{path}\nRun: uv run scripts/extract_jlpt_vocab.py"
   }
 }

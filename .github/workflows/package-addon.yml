@@ -25,45 +25,32 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      - name: Sync project
+        run: uv sync --locked
+
       - name: Compile Python sources
         run: |
-          python -m py_compile \
+          uv run python -m py_compile \
             jlpt_coverage/*.py \
             scripts/*.py \
             anki_addon/jlpt_coverage/__init__.py \
             anki_addon/jlpt_coverage/i18n.py
 
       - name: Package add-on
-        run: python scripts/package_anki_addon.py
+        run: uv run scripts/package_anki_addon.py
 
       - name: Validate add-on archive
-        run: |
-          python - <<'PY'
-          import zipfile
-
-          path = "dist/jlpt_coverage.ankiaddon"
-          with zipfile.ZipFile(path) as archive:
-              bad = archive.testzip()
-              if bad:
-                  raise SystemExit(f"Invalid file in archive: {bad}")
-              required = {
-                  "__init__.py",
-                  "data/jlpt_vocab.csv",
-                  "jlpt_coverage/core.py",
-                  "python_i18n/i18n/__init__.py",
-                  "locale/en_US.json",
-                  "locale/zh_CN.json",
-              }
-              names = set(archive.namelist())
-              missing = sorted(required - names)
-              if missing:
-                  raise SystemExit(f"Missing packaged files: {missing}")
-          PY
+        run: uv run scripts/validate_anki_addon.py
 
       - name: Upload add-on artifact
         uses: actions/upload-artifact@v4

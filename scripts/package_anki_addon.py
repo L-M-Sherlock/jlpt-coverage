@@ -53,7 +53,7 @@ def main() -> int:
         )
     if not VOCAB_CSV.exists():
         raise FileNotFoundError(
-            f"Missing vocabulary CSV: {VOCAB_CSV}\nRun: python3 scripts/extract_jlpt_vocab.py"
+            f"Missing vocabulary CSV: {VOCAB_CSV}\nRun: uv run scripts/extract_jlpt_vocab.py"
         )
 
     with tempfile.TemporaryDirectory(prefix="jlpt_coverage_addon_") as temp_dir:

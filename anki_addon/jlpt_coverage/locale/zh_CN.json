@@ -56,6 +56,6 @@
     "report-source": "词表来源与致谢: %{link} 提供 eggrolls JLPT10k 词汇数据。",
     "report-top-missing": "每级前 %{count} 个缺词:",
     "cli-report-written": "已写入报告:",
-    "cli-missing-vocab": "缺少项目内 JLPT 词表文件: %{path}\n请运行: python3 scripts/extract_jlpt_vocab.py"
+    "cli-missing-vocab": "缺少项目内 JLPT 词表文件: %{path}\n请运行: uv run scripts/extract_jlpt_vocab.py"
   }
 }
