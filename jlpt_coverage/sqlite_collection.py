@@ -136,7 +136,7 @@ def collect_anki_keys(
                 stats["mature_notes"] += 1
                 stats[f"mature_notes:{note_type_name}"] += 1
 
-            for name, value in zip(names, values, strict=False):
+            for name, value in zip(names, values):
                 if field_is_term(note_type_name, name):
                     keys = text_keys(value)
                     term_keys.update(keys)

@@ -246,7 +246,7 @@ def collect_anki_keys_from_collection(
                 stats["mature_notes"] += 1
                 stats[f"mature_notes:{note_type_name}"] += 1
 
-            for name, value in zip(field_names, values, strict=False):
+            for name, value in zip(field_names, values):
                 if field_matches(field_rules, note_type_name, "term", name):
                     keys = text_keys(value)
                     term_keys.update(keys)
