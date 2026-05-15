@@ -6,7 +6,7 @@ import unicodedata
 from collections.abc import Iterable
 
 
-JLPT_LEVELS = ("N1", "N2", "N3", "N4+N5")
+JLPT_LEVELS = ("N1", "N2", "N3", "N4", "N5")
 
 _MEDIA_RE = re.compile(r"\[(?:sound|anki:play:[^\]]+):[^\]]*\]", re.IGNORECASE)
 _RT_RE = re.compile(r"<rt\b[^>]*>.*?</rt>", re.IGNORECASE | re.DOTALL)
@@ -141,4 +141,3 @@ def level_sort_key(level: str) -> tuple[int, str]:
 def frequency_sort_key(frequency: str) -> tuple[int, str]:
     order = {"高频": 1, "中频": 2, "中低频": 3, "低频": 4, "未分频": 9}
     return order.get(frequency, 99), frequency
-

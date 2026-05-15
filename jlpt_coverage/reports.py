@@ -7,21 +7,22 @@ from pathlib import Path
 from .core import vocab_status_fieldnames
 
 
-JLPT_EXPORT_LEVELS = ("N1", "N2", "N3", "N4+N5")
+JLPT_EXPORT_LEVELS = ("N1", "N2", "N3", "N4", "N5")
+JLPT_LEGACY_COMBINED_LEVEL = "N4+N5"
 JLPT_EXPORT_LEVEL_ALIASES = {
     "N1": "N1",
     "N2": "N2",
     "N3": "N3",
-    "N4": "N4+N5",
-    "N5": "N4+N5",
-    "N4+N5": "N4+N5",
+    "N4": "N4",
+    "N5": "N5",
+    JLPT_LEGACY_COMBINED_LEVEL: JLPT_LEGACY_COMBINED_LEVEL,
 }
 
 
 def normalize_export_level(level: str) -> str:
     normalized = level.strip().upper()
     if normalized not in JLPT_EXPORT_LEVEL_ALIASES:
-        allowed = ", ".join(JLPT_EXPORT_LEVELS)
+        allowed = ", ".join(JLPT_EXPORT_LEVEL_ALIASES)
         raise ValueError(f"Invalid JLPT export level: {level}. Expected one of: {allowed}")
     return JLPT_EXPORT_LEVEL_ALIASES[normalized]
 
@@ -36,14 +37,23 @@ def export_level_filter(mode: str, level: str | None = None) -> str:
 
 def export_levels_for_filter(level_filter: str) -> set[str]:
     if not level_filter or level_filter == "all":
-        return set(JLPT_EXPORT_LEVELS)
+        return {*JLPT_EXPORT_LEVELS, JLPT_LEGACY_COMBINED_LEVEL}
     mode, _, raw_level = level_filter.partition(":")
     level = normalize_export_level(raw_level)
     if mode == "only":
+        if level == JLPT_LEGACY_COMBINED_LEVEL:
+            return {"N4", "N5", JLPT_LEGACY_COMBINED_LEVEL}
+        if level in {"N4", "N5"}:
+            return {level, JLPT_LEGACY_COMBINED_LEVEL}
         return {level}
     if mode == "up-to":
+        if level == JLPT_LEGACY_COMBINED_LEVEL:
+            return {"N4", "N5", JLPT_LEGACY_COMBINED_LEVEL}
         start = JLPT_EXPORT_LEVELS.index(level)
-        return set(JLPT_EXPORT_LEVELS[start:])
+        levels = set(JLPT_EXPORT_LEVELS[start:])
+        if {"N4", "N5"} & levels:
+            levels.add(JLPT_LEGACY_COMBINED_LEVEL)
+        return levels
     raise ValueError(f"Invalid export level filter: {level_filter}")
 
 

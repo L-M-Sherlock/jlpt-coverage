@@ -78,10 +78,14 @@ EXPORT_LEVEL_CHOICES = (
     ("only:N1", "export-level-only-n1"),
     ("only:N2", "export-level-only-n2"),
     ("only:N3", "export-level-only-n3"),
+    ("only:N4", "export-level-only-n4"),
+    ("only:N5", "export-level-only-n5"),
     ("only:N4+N5", "export-level-only-n4n5"),
     ("up-to:N1", "export-level-up-to-n1"),
     ("up-to:N2", "export-level-up-to-n2"),
     ("up-to:N3", "export-level-up-to-n3"),
+    ("up-to:N4", "export-level-up-to-n4"),
+    ("up-to:N5", "export-level-up-to-n5"),
     ("up-to:N4+N5", "export-level-up-to-n4n5"),
 )
 NONE_FIELD = ""

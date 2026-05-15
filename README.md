@@ -101,9 +101,8 @@ When enabled, the report expands each JLPT level by the frequency band found in 
 
 Current source behavior:
 
-- N1 uses high, medium, and low frequency bands.
-- N2 and N3 use high and lower-frequency bands.
-- N4 and N5 are merged by the source deck as `N4+N5`, and cannot be reliably split into separate N4 and N5 levels from this file alone.
+- N1, N2, and N3 use high, medium, and low frequency bands.
+- N4 and N5 are now separate levels in the bundled vocabulary.
 
 ## CSV Export
 
@@ -118,7 +117,7 @@ level,frequency,word_plain,reading,missing,unlearned
 
 The CSV is designed for sorting, filtering, and planning follow-up mining or JLPT review.
 
-You can export all levels, one specific level, or a target level range. For example, `up to N2` exports N2, N3, and N4+N5 entries. The source vocabulary merges N4 and N5, so N4/N5 export filters map to `N4+N5`.
+You can export all levels, one specific level, or a target level range. For example, `up to N2` exports N2, N3, N4, and N5 entries. The legacy `N4+N5` filter is still accepted for older combined vocabulary files.
 
 ## Language Support
 

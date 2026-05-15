@@ -13,17 +13,26 @@ if str(PROJECT_ROOT) not in sys.path:
 from jlpt_coverage.extract import write_vocab
 
 
-DEFAULT_SOURCE = Path(
-    "/Users/jarrettye/Codes/anki-jlpt-decks/eggrolls-JLPT10k-v3/notes.csv"
+SOURCE_REPO = Path("/Users/jarrettye/Codes/anki-jlpt-decks")
+DEFAULT_SOURCE_CANDIDATES = (
+    SOURCE_REPO / "deck-source" / "notes.csv",
+    SOURCE_REPO / "eggrolls-JLPT10k-v3" / "notes.csv",
 )
 DEFAULT_OUTPUT = PROJECT_ROOT / "jlpt_coverage" / "data" / "jlpt_vocab.csv"
+
+
+def default_source() -> Path:
+    for source in DEFAULT_SOURCE_CANDIDATES:
+        if source.exists():
+            return source
+    return DEFAULT_SOURCE_CANDIDATES[0]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Extract the JLPT vocabulary columns needed by the coverage checker."
     )
-    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Original eggrolls notes.csv")
+    parser.add_argument("--source", type=Path, default=default_source(), help="Original eggrolls notes.csv")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Project-local extracted CSV")
     return parser.parse_args()
 

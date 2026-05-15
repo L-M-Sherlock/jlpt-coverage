@@ -140,12 +140,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     export_group.add_argument(
         "--export-level",
         choices=tuple(JLPT_EXPORT_LEVEL_ALIASES),
-        help="Only write this JLPT level to the CSV report. N4 and N5 map to N4+N5.",
+        help="Only write this JLPT level to the CSV report. N4+N5 is accepted for legacy combined exports.",
     )
     export_group.add_argument(
         "--export-up-to",
         choices=tuple(JLPT_EXPORT_LEVEL_ALIASES),
-        help="Write the target level and easier levels to the CSV report, e.g. N2 exports N2, N3, and N4+N5.",
+        help="Write the target level and easier levels to the CSV report, e.g. N2 exports N2, N3, N4, and N5.",
     )
     parser.add_argument(
         "--by-frequency",
