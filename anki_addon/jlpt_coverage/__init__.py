@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import sys
 from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from aqt import mw
+from aqt.operations import CollectionOp, QueryOp
 from aqt.qt import (
     QAction,
     QCheckBox,
@@ -14,6 +16,7 @@ from aqt.qt import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPalette,
     QPushButton,
     QScrollArea,
@@ -36,10 +39,14 @@ except ImportError:
 try:
     from .jlpt_coverage.core import (
         DEFAULT_NOTE_TYPES,
+        JLPT_TAG_LEVELS,
         NOTE_TYPE_FIELD_RULES,
         MatchKeys,
+        build_jlpt_level_indexes,
         format_summary_html,
+        jlpt_tags_for_target,
         load_jlpt_entries,
+        matched_jlpt_targets_strict,
         split_fields,
         summarize,
         vocab_status_rows,
@@ -52,10 +59,14 @@ except ImportError:
         sys.path.insert(0, str(project_root))
     from jlpt_coverage.core import (
         DEFAULT_NOTE_TYPES,
+        JLPT_TAG_LEVELS,
         NOTE_TYPE_FIELD_RULES,
         MatchKeys,
+        build_jlpt_level_indexes,
         format_summary_html,
+        jlpt_tags_for_target,
         load_jlpt_entries,
+        matched_jlpt_targets_strict,
         split_fields,
         summarize,
         vocab_status_rows,
@@ -290,6 +301,181 @@ def collect_anki_keys_from_collection(
     ), dict(stats)
 
 
+@dataclass
+class JlptTagPreview:
+    note_ids_by_tag: dict[str, set[int]]
+    matched_note_ids: set[int]
+    already_tagged_note_ids: set[int]
+    skipped_levels: dict[str, int]
+
+    @property
+    def total_notes_to_tag(self) -> int:
+        return len(set().union(*self.note_ids_by_tag.values())) if self.note_ids_by_tag else 0
+
+    @property
+    def total_tags_to_add(self) -> int:
+        return sum(len(note_ids) for note_ids in self.note_ids_by_tag.values())
+
+
+@dataclass
+class JlptTagApplyResult:
+    changes: object
+    note_count: int
+    tag_count: int
+    note_counts_by_tag: dict[str, int]
+
+
+def jlpt_tag_sort_key(tag: str) -> tuple[int, int, str]:
+    parts = tag.split("::")
+    level = parts[1] if len(parts) >= 2 and parts[0] == "JLPT" else ""
+    frequency = parts[2] if len(parts) >= 3 else ""
+    level_order = {level: index for index, level in enumerate(JLPT_TAG_LEVELS)}
+    frequency_order = {"高频": 1, "中频": 2, "中低频": 3, "低频": 4, "未分频": 9}
+    return level_order.get(level, 99), frequency_order.get(frequency, 0), tag
+
+
+def format_tag_counts(note_ids_by_tag: dict[str, set[int]] | dict[str, int]) -> str:
+    parts = []
+    for tag in sorted(note_ids_by_tag, key=jlpt_tag_sort_key):
+        value = note_ids_by_tag[tag]
+        count = len(value) if isinstance(value, set) else int(value)
+        if count:
+            parts.append(f"{tag}: {count}")
+    return "\n".join(parts)
+
+
+def confirm_action(parent, title: str, message: str) -> bool:
+    try:
+        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        result = QMessageBox.question(parent, title, message, buttons, QMessageBox.StandardButton.No)
+        return result == QMessageBox.StandardButton.Yes
+    except AttributeError:
+        buttons = QMessageBox.Yes | QMessageBox.No
+        result = QMessageBox.question(parent, title, message, buttons, QMessageBox.No)
+        return result == QMessageBox.Yes
+
+
+def show_modal_info(parent, message: str) -> None:
+    QMessageBox.information(parent, t("window-title"), message)
+
+
+def show_modal_warning(parent, message: str) -> None:
+    QMessageBox.warning(parent, t("window-title"), message)
+
+
+def preview_jlpt_tags_from_collection(
+    col,
+    vocab_csv_path: Path,
+    note_type_names: tuple[str, ...],
+    field_rules: dict[str, dict[str, set[str]]],
+    *,
+    exclude_suspended: bool,
+) -> JlptTagPreview:
+    missing_rules = sorted(set(note_type_names) - set(field_rules))
+    if missing_rules:
+        raise ValueError(t("error-missing-field-rules", names=", ".join(missing_rules)))
+
+    models = {}
+    missing_note_types = []
+    for note_type_name in note_type_names:
+        model = model_by_name(col, note_type_name)
+        if model is None:
+            missing_note_types.append(note_type_name)
+        else:
+            models[note_type_name] = model
+    if missing_note_types:
+        raise ValueError(t("error-missing-note-types", names=", ".join(missing_note_types)))
+
+    entries = load_jlpt_entries(vocab_csv_path)
+    indexes = build_jlpt_level_indexes(entries)
+    note_ids_by_tag: dict[str, set[int]] = {}
+    matched_note_ids: set[int] = set()
+    already_tagged_note_ids: set[int] = set()
+
+    card_filter = "and c.queue != -1" if exclude_suspended else ""
+    query = f"""
+        select
+            n.id,
+            n.flds,
+            n.tags
+        from notes n
+        join cards c on c.nid = n.id
+        where n.mid = ?
+          {card_filter}
+        group by n.id, n.flds, n.tags
+    """
+
+    for note_type_name, model in models.items():
+        field_names = [field["name"] for field in model["flds"]]
+        for note_id, flds, tags in col.db.all(query, model["id"]):
+            values = split_fields(str(flds), len(field_names))
+            term_keys: set[str] = set()
+            reading_keys: set[str] = set()
+
+            for name, value in zip(field_names, values):
+                if field_matches(field_rules, note_type_name, "term", name):
+                    term_keys.update(text_keys(value))
+                elif field_matches(field_rules, note_type_name, "reading", name):
+                    reading_keys.update(text_keys(value))
+
+            targets = matched_jlpt_targets_strict(term_keys, reading_keys, indexes)
+            if not targets:
+                continue
+
+            matched_note_ids.add(int(note_id))
+            existing_tags = {tag.lower() for tag in str(tags).split()}
+            for target in targets:
+                for tag in jlpt_tags_for_target(target):
+                    if tag.lower() in existing_tags:
+                        already_tagged_note_ids.add(int(note_id))
+                    else:
+                        note_ids_by_tag.setdefault(tag, set()).add(int(note_id))
+
+    return JlptTagPreview(
+        note_ids_by_tag={tag: note_ids for tag, note_ids in note_ids_by_tag.items() if note_ids},
+        matched_note_ids=matched_note_ids,
+        already_tagged_note_ids=already_tagged_note_ids,
+        skipped_levels=indexes.skipped_levels,
+    )
+
+
+def apply_jlpt_tags_to_collection(
+    col,
+    note_ids_by_tag: dict[str, set[int]],
+    *,
+    undo_name: str,
+) -> JlptTagApplyResult:
+    if not note_ids_by_tag:
+        raise ValueError(t("error-no-jlpt-tags-to-apply"))
+
+    undo_id = None
+    try:
+        undo_id = col.add_custom_undo_entry(undo_name)
+    except AttributeError:
+        pass
+
+    changes = None
+    note_counts_by_tag: dict[str, int] = {}
+    for tag in sorted(note_ids_by_tag, key=jlpt_tag_sort_key):
+        note_ids = sorted(note_ids_by_tag[tag])
+        if not note_ids:
+            continue
+        note_counts_by_tag[tag] = len(note_ids)
+        changes = col.tags.bulk_add(note_ids, tag)
+
+    if changes is None:
+        raise ValueError(t("error-no-jlpt-tags-to-apply"))
+    if undo_id is not None:
+        changes = col.merge_undo_entries(undo_id)
+
+    return JlptTagApplyResult(
+        changes=changes,
+        note_count=len(set().union(*note_ids_by_tag.values())),
+        tag_count=sum(len(note_ids) for note_ids in note_ids_by_tag.values()),
+        note_counts_by_tag=note_counts_by_tag,
+    )
+
+
 class CoverageDialog(QDialog):
     def __init__(self) -> None:
         super().__init__(mw)
@@ -406,6 +592,9 @@ class CoverageDialog(QDialog):
         self.export_button.clicked.connect(self.export_reports)
         self.export_button.setEnabled(False)
         button_row.addWidget(self.export_button)
+        self.tag_button = QPushButton(t("tag-jlpt"))
+        self.tag_button.clicked.connect(self.tag_jlpt_notes)
+        button_row.addWidget(self.tag_button)
         button_row.addStretch()
         layout.addLayout(button_row)
 
@@ -519,6 +708,92 @@ class CoverageDialog(QDialog):
             showWarning(str(exc))
         finally:
             self.run_button.setEnabled(True)
+
+    def tag_jlpt_notes(self) -> None:
+        path = vocab_path()
+        if not path.exists():
+            show_modal_warning(self, t("error-missing-jlpt-vocab", path=str(path)))
+            return
+
+        try:
+            note_type_names = self.selected_note_types()
+            field_rules = self.selected_field_rules(note_type_names, "word-or-reading")
+            exclude_suspended = self.exclude_suspended_checkbox.isChecked()
+        except Exception as exc:
+            show_modal_warning(self, str(exc))
+            return
+
+        self.tag_button.setEnabled(False)
+
+        def preview_op(col):
+            return preview_jlpt_tags_from_collection(
+                col,
+                path,
+                note_type_names,
+                field_rules,
+                exclude_suspended=exclude_suspended,
+            )
+
+        QueryOp(
+            parent=self,
+            op=preview_op,
+            success=self.confirm_jlpt_tags,
+        ).failure(self.tag_jlpt_failed).with_progress(t("tag-preview-progress")).run_in_background()
+
+    def tag_jlpt_failed(self, exc: Exception) -> None:
+        self.tag_button.setEnabled(True)
+        show_modal_warning(self, str(exc))
+
+    def confirm_jlpt_tags(self, preview: JlptTagPreview) -> None:
+        self.tag_button.setEnabled(True)
+        legacy_warning = ""
+        if preview.skipped_levels:
+            skipped = ", ".join(f"{level}: {count}" for level, count in sorted(preview.skipped_levels.items()))
+            legacy_warning = "\n\n" + t("tag-legacy-levels-skipped", counts=skipped)
+
+        if preview.total_notes_to_tag == 0:
+            if preview.matched_note_ids:
+                show_modal_info(self, t("tag-all-existing", count=len(preview.matched_note_ids)) + legacy_warning)
+            else:
+                show_modal_info(self, t("tag-no-matches") + legacy_warning)
+            return
+
+        counts = format_tag_counts(preview.note_ids_by_tag)
+        message = t(
+            "tag-confirm-message",
+            notes=preview.total_notes_to_tag,
+            tags=preview.total_tags_to_add,
+            counts=counts,
+        ) + legacy_warning
+        if not confirm_action(self, t("tag-confirm-title"), message):
+            return
+
+        self.apply_jlpt_tags(preview)
+
+    def apply_jlpt_tags(self, preview: JlptTagPreview) -> None:
+        self.tag_button.setEnabled(False)
+        note_ids_by_tag = {tag: set(note_ids) for tag, note_ids in preview.note_ids_by_tag.items()}
+        undo_name = t("tag-undo-name")
+
+        def apply_op(col):
+            return apply_jlpt_tags_to_collection(col, note_ids_by_tag, undo_name=undo_name)
+
+        CollectionOp(
+            parent=self,
+            op=apply_op,
+        ).success(self.jlpt_tags_applied).failure(self.tag_jlpt_failed).run_in_background()
+
+    def jlpt_tags_applied(self, result: JlptTagApplyResult) -> None:
+        self.tag_button.setEnabled(True)
+        show_modal_info(
+            self,
+            t(
+                "tag-success",
+                notes=result.note_count,
+                tags=result.tag_count,
+                counts=format_tag_counts(result.note_counts_by_tag),
+            )
+        )
 
     def export_reports(self) -> None:
         if not self.summary:
