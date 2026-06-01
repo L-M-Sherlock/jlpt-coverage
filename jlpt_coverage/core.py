@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
-from .text import frequency_sort_key, level_sort_key, text_keys
+from .text import JLPT_LEVELS, frequency_sort_key, level_sort_key, text_keys
 
 
 DEFAULT_NOTE_TYPES = ("Lapis", "Kaishi 1.5k", "Kaishi 1.5k zh-CH")
@@ -28,6 +28,9 @@ NOTE_TYPE_FIELD_RULES = {
         "reading": {"expressionreading"},
     },
 }
+JLPT_TAG_PREFIX = "JLPT::"
+JLPT_TAG_LEVELS = JLPT_LEVELS
+JLPT_FREQUENCY_TAG_LEVELS = ("N1", "N2", "N3")
 
 
 def translate_text(translate: Translator | None, key: str, default: str, **kwargs: object) -> str:
@@ -62,6 +65,20 @@ class MatchKeys:
     young_reading: set[str]
     mature_term: set[str]
     mature_reading: set[str]
+
+
+@dataclass(frozen=True)
+class JlptTagTarget:
+    level: str
+    frequency: str
+
+
+@dataclass(frozen=True)
+class JlptLevelIndexes:
+    term: dict[str, set[str]]
+    reading: dict[str, set[str]]
+    term_reading: dict[tuple[str, str], set[JlptTagTarget]]
+    skipped_levels: dict[str, int]
 
 
 def load_jlpt_entries(path: Path) -> list[JlptEntry]:
@@ -125,6 +142,98 @@ def classify_match(entry: JlptEntry, term_keys: set[str], reading_keys: set[str]
     else:
         matched_by = ""
     return covered, matched_by
+
+
+def jlpt_tag_for_level(level: str, prefix: str = JLPT_TAG_PREFIX) -> str:
+    if level not in JLPT_TAG_LEVELS:
+        allowed = ", ".join(JLPT_TAG_LEVELS)
+        raise ValueError(f"Invalid JLPT tag level: {level}. Expected one of: {allowed}")
+    return f"{prefix}{level}"
+
+
+def jlpt_tag_for_frequency(level: str, frequency: str, prefix: str = JLPT_TAG_PREFIX) -> str:
+    if level not in JLPT_FREQUENCY_TAG_LEVELS:
+        allowed = ", ".join(JLPT_FREQUENCY_TAG_LEVELS)
+        raise ValueError(f"Invalid JLPT frequency tag level: {level}. Expected one of: {allowed}")
+    if not frequency:
+        raise ValueError("JLPT frequency tag needs a frequency value.")
+    return f"{prefix}{level}::{frequency}"
+
+
+def jlpt_tags_for_target(target: JlptTagTarget, prefix: str = JLPT_TAG_PREFIX) -> tuple[str, ...]:
+    tags = [jlpt_tag_for_level(target.level, prefix)]
+    if target.level in JLPT_FREQUENCY_TAG_LEVELS:
+        tags.append(jlpt_tag_for_frequency(target.level, target.frequency, prefix))
+    return tuple(tags)
+
+
+def build_jlpt_level_indexes(entries: list[JlptEntry]) -> JlptLevelIndexes:
+    term_index: dict[str, set[str]] = defaultdict(set)
+    reading_index: dict[str, set[str]] = defaultdict(set)
+    term_reading_index: dict[tuple[str, str], set[JlptTagTarget]] = defaultdict(set)
+    skipped_levels: Counter[str] = Counter()
+
+    for entry in entries:
+        if entry.level not in JLPT_TAG_LEVELS:
+            skipped_levels[entry.level] += 1
+            continue
+        target = JlptTagTarget(entry.level, entry.frequency)
+        term_keys = entry.term_keys
+        reading_keys = entry.reading_keys
+        for key in term_keys:
+            term_index[key].add(entry.level)
+        for key in reading_keys:
+            reading_index[key].add(entry.level)
+        for term_key in term_keys:
+            for reading_key in reading_keys:
+                term_reading_index[(term_key, reading_key)].add(target)
+
+    return JlptLevelIndexes(
+        term=dict(term_index),
+        reading=dict(reading_index),
+        term_reading=dict(term_reading_index),
+        skipped_levels=dict(skipped_levels),
+    )
+
+
+def _levels_for_keys(keys: set[str], index: dict[str, set[str]]) -> set[str]:
+    levels: set[str] = set()
+    for key in keys:
+        levels.update(index.get(key, set()))
+    return levels
+
+
+def matched_jlpt_levels(
+    term_keys: set[str],
+    reading_keys: set[str],
+    indexes: JlptLevelIndexes,
+    mode: str,
+) -> set[str]:
+    if mode == "word":
+        return _levels_for_keys(term_keys, indexes.term)
+    if mode == "reading":
+        return _levels_for_keys(reading_keys, indexes.reading)
+    return _levels_for_keys(term_keys, indexes.term) | _levels_for_keys(reading_keys, indexes.reading)
+
+
+def matched_jlpt_levels_strict(
+    term_keys: set[str],
+    reading_keys: set[str],
+    indexes: JlptLevelIndexes,
+) -> set[str]:
+    return {target.level for target in matched_jlpt_targets_strict(term_keys, reading_keys, indexes)}
+
+
+def matched_jlpt_targets_strict(
+    term_keys: set[str],
+    reading_keys: set[str],
+    indexes: JlptLevelIndexes,
+) -> set[JlptTagTarget]:
+    targets: set[JlptTagTarget] = set()
+    for term_key in term_keys:
+        for reading_key in reading_keys:
+            targets.update(indexes.term_reading.get((term_key, reading_key), set()))
+    return targets
 
 
 def detail_row(entry: JlptEntry) -> dict[str, str]:

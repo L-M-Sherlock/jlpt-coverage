@@ -15,9 +15,10 @@ The main use case is the workflow described in the [Donkuri mining guide](https:
 - Can split results by source frequency band.
 - Can show Young and Mature coverage using Anki's interval convention.
 - Exports one vocabulary status CSV with missing and unlearned flags.
+- Can add `JLPT::N1` through `JLPT::N5` tags, plus N1-N3 frequency tags, to matching Anki notes.
 - Bundles the project-local JLPT vocabulary CSV, so the add-on does not read the original source deck files at runtime.
 
-The add-on reads your currently open Anki collection through Anki's add-on API and does not write to the collection.
+The coverage and CSV export actions only read your currently open Anki collection through Anki's add-on API. The optional `Tag JLPT` action writes note tags to matching notes.
 
 ## Who This Is For
 
@@ -56,6 +57,7 @@ Open `Tools -> JLPT Coverage` in Anki.
 6. Click `Save Defaults` if you want to reuse the same selections.
 7. Choose an export level filter if you only want one level or a target level range.
 8. Click `Export CSV` to save the vocabulary status file.
+9. Click `Tag JLPT` to add JLPT level and N1-N3 frequency tags to matching notes.
 
 The dialog loads note types and fields from the current Anki collection, so you do not need to type note type or field names manually.
 
@@ -80,6 +82,14 @@ You can select different fields in the UI for any note type in your collection.
 | `word` | Only written forms are compared. | Stricter checks where the exact written vocabulary item matters more. |
 
 The JLPT side uses `word_plain` as the written form and `reading` as the reading.
+
+## JLPT Note Tags
+
+`Tag JLPT` uses the same note type, field, and suspended-card settings shown in the dialog. It does not use the coverage match-mode selector: tagging always requires the same JLPT vocabulary entry's written form and reading to both match the note.
+
+The generated level tags are `JLPT::N1`, `JLPT::N2`, `JLPT::N3`, `JLPT::N4`, and `JLPT::N5`. N1, N2, and N3 matches also receive frequency tags such as `JLPT::N2::高频`, `JLPT::N2::中频`, or `JLPT::N2::低频`. Anki tags are note-level, so every card generated from a tagged note will show the same tag.
+
+Re-running the action only adds missing tags. It does not remove existing JLPT tags, so stale tags must be cleaned manually if you change fields, note types, or matching preferences later.
 
 ## Report Metrics
 

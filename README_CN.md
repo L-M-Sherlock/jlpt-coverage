@@ -15,9 +15,10 @@ JLPT Coverage 是一个 Anki 插件，面向通过沉浸材料挖词的日语学
 - 可按源词表频率分档展开统计。
 - 可按 Anki interval 口径统计 Young 和 Mature 覆盖率。
 - 导出一份词表状态 CSV，包含 missing 和 unlearned 标记。
+- 可给匹配到的 Anki notes 添加 `JLPT::N1` 到 `JLPT::N5` 标签，以及 N1-N3 频率标签。
 - 插件内置项目本地的 JLPT 词表 CSV，运行时不会读取原始 deck 文件。
 
-插件通过 Anki add-on API 读取当前打开的集合，不会写入集合。
+覆盖率统计和 CSV 导出只会通过 Anki add-on API 读取当前打开的集合。可选的 `打 JLPT 标签` 操作会向匹配到的 notes 写入标签。
 
 ## 适合谁使用
 
@@ -56,6 +57,7 @@ GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。�
 6. 如果希望以后复用当前配置，点击 `Save Defaults`。
 7. 如果只想导出某个等级或目标等级范围，选择导出等级过滤。
 8. 点击 `Export CSV` 导出词表状态文件。
+9. 点击 `打 JLPT 标签` 给匹配到的 notes 添加 JLPT 等级标签和 N1-N3 频率标签。
 
 界面会直接加载当前 Anki 集合中的 note type 和字段，避免手动输入名称导致错误。
 
@@ -80,6 +82,14 @@ GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。�
 | `word` | 只比较字形。 | 需要更严格统计具体词形时使用。 |
 
 JLPT 词表侧使用 `word_plain` 作为字形字段，`reading` 作为读音字段。
+
+## JLPT note 标签
+
+`打 JLPT 标签` 会使用界面上当前选择的 note type、字段和排除暂停卡片设置。它不使用覆盖率统计的匹配模式下拉框；打标签始终要求同一条 JLPT 词表项的字形和读音都命中当前 note。
+
+生成的等级标签是 `JLPT::N1`、`JLPT::N2`、`JLPT::N3`、`JLPT::N4`、`JLPT::N5`。N1、N2、N3 命中项还会生成频率标签，例如 `JLPT::N2::高频`、`JLPT::N2::中频`、`JLPT::N2::低频`。Anki 标签挂在 note 上，因此同一个 note 生成的所有 cards 都会显示同样的标签。
+
+重复运行只会追加缺失标签，不会删除已有 JLPT 标签。如果之后修改字段、note type 或匹配偏好，过期标签需要手动清理。
 
 ## 报表指标
 
