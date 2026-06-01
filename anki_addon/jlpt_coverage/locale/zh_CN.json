@@ -9,6 +9,7 @@
     "field-not-used": "不使用",
     "match-mode": "匹配模式",
     "mode-word-or-reading": "字形或读音",
+    "mode-word-and-reading": "字形和读音",
     "mode-reading": "只匹配读音",
     "mode-word": "只匹配字形",
     "by-frequency": "按频率分档",

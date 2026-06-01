@@ -78,6 +78,7 @@ GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。�
 | 模式 | 含义 | 适合场景 |
 | --- | --- | --- |
 | `word-or-reading` | 字形或读音任一命中，就算覆盖。 | 默认的 mining 覆盖率统计。 |
+| `word-and-reading` | 字形和读音都命中，才算覆盖。 | 需要避免只靠读音或只靠字形误命中的严格覆盖率统计。 |
 | `reading` | 只比较读音。 | 避免字形、假名/汉字、写法差异导致遗漏。 |
 | `word` | 只比较字形。 | 需要更严格统计具体词形时使用。 |
 
@@ -163,6 +164,7 @@ uv run jlpt-coverage
 ```bash
 uv run jlpt-coverage --reading-only
 uv run jlpt-coverage --strict-word
+uv run jlpt-coverage --match-mode word-and-reading
 uv run jlpt-coverage --by-frequency
 uv run jlpt-coverage --by-interval
 uv run jlpt-coverage --exclude-suspended

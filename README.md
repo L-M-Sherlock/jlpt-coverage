@@ -78,6 +78,7 @@ You can select different fields in the UI for any note type in your collection.
 | Mode | Meaning | Best for |
 | --- | --- | --- |
 | `word-or-reading` | A JLPT entry is covered if either the written form or the reading matches. | Default mining coverage checks. |
+| `word-and-reading` | A JLPT entry is covered only if both the written form and the reading match. | Strict coverage checks that avoid reading-only or word-only false positives. |
 | `reading` | Only readings are compared. | Avoiding missed matches caused by spelling, kana/kanji, or orthographic differences. |
 | `word` | Only written forms are compared. | Stricter checks where the exact written vocabulary item matters more. |
 
@@ -163,6 +164,7 @@ Common options:
 ```bash
 uv run jlpt-coverage --reading-only
 uv run jlpt-coverage --strict-word
+uv run jlpt-coverage --match-mode word-and-reading
 uv run jlpt-coverage --by-frequency
 uv run jlpt-coverage --by-interval
 uv run jlpt-coverage --exclude-suspended

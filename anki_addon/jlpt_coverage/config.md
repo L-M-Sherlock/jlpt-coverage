@@ -6,7 +6,7 @@ Configuration fields:
 - `field_mappings`: Per-note-type fields used for matching.
   - `term`: field containing the written form.
   - `reading`: field containing the reading.
-- `match_mode`: `word-or-reading`, `reading`, or `word`.
+- `match_mode`: `word-or-reading`, `word-and-reading`, `reading`, or `word`.
 - `by_frequency`: `true` to split output by the JLPT source frequency band.
 - `by_interval`: `true` to show Young/Mature coverage. Young is `ivl < 21`; Mature is `ivl >= 21`.
 - `exclude_suspended`: `true` to ignore suspended cards when counting coverage.

@@ -81,6 +81,7 @@ SOURCE_VOCAB_PATH = ADDON_DIR.parents[1] / "jlpt_coverage" / "data" / "jlpt_voca
 
 MODE_CHOICES = (
     ("word-or-reading", "mode-word-or-reading"),
+    ("word-and-reading", "mode-word-and-reading"),
     ("reading", "mode-reading"),
     ("word", "mode-word"),
 )
@@ -620,9 +621,9 @@ class CoverageDialog(QDialog):
         for note_type_name in note_type_names:
             term_field = self.term_field_combos[note_type_name].currentData() or ""
             reading_field = self.reading_field_combos[note_type_name].currentData() or ""
-            if match_mode in ("word", "word-or-reading") and not term_field:
+            if match_mode in ("word", "word-or-reading", "word-and-reading") and not term_field:
                 raise ValueError(t("error-term-field-required", note_type=note_type_name))
-            if match_mode in ("reading", "word-or-reading") and not reading_field:
+            if match_mode in ("reading", "word-or-reading", "word-and-reading") and not reading_field:
                 raise ValueError(t("error-reading-field-required", note_type=note_type_name))
             rules[note_type_name] = {
                 "term": {term_field.strip().lower()} if term_field else set(),

@@ -130,6 +130,8 @@ def classify_match(entry: JlptEntry, term_keys: set[str], reading_keys: set[str]
         covered = word_match
     elif mode == "reading":
         covered = reading_match
+    elif mode == "word-and-reading":
+        covered = word_match and reading_match
     else:
         covered = word_match or reading_match
 
