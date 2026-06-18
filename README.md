@@ -16,6 +16,7 @@ The main use case is the workflow described in the [Donkuri mining guide](https:
 - Can show Young and Mature coverage using Anki's interval convention.
 - Exports one vocabulary status CSV with missing and unlearned flags.
 - Can add `JLPT::N1` through `JLPT::N5` tags, plus N1-N3 frequency tags, to matching Anki notes.
+- Provides an optional Yomitan metadata dictionary for showing eggrolls JLPT labels while reading.
 - Bundles the project-local JLPT vocabulary CSV, so the add-on does not read the original source deck files at runtime.
 
 The coverage and CSV export actions only read your currently open Anki collection through Anki's add-on API. The optional `Tag JLPT` action writes note tags to matching notes.
@@ -44,6 +45,19 @@ Download `jlpt_coverage.ankiaddon` from the latest [GitHub Release](https://gith
 6. Open `Tools -> JLPT Coverage`.
 
 GitHub Actions artifacts are always wrapped by GitHub in an outer `.zip` file. If you download a workflow artifact instead of a Release asset, unzip it first and install the `.ankiaddon` file inside.
+
+## Yomitan Dictionary
+
+The latest Release also includes `eggrolls-jlpt-yomitan.zip`, a Yomitan term metadata dictionary generated from the same bundled eggrolls JLPT vocabulary data.
+
+Install it in Yomitan from `Settings -> Dictionaries -> Import Dictionary`, then select `eggrolls-jlpt-yomitan.zip`. After import, matching lookup results can show JLPT labels directly in the Yomitan popup.
+
+The dictionary displays:
+
+- N1-N3 with eggrolls frequency bands, such as `N1高频`, `N2中频`, or `N3低频`.
+- N4 and N5 as level-only labels, `N4` and `N5`.
+
+This is a metadata dictionary, not a full definition dictionary. It does not include meanings, examples, audio, or card templates. It is intended to sit alongside your normal Yomitan dictionaries and make JLPT status visible while reading.
 
 ## Basic Use
 

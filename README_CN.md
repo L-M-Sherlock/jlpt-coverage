@@ -16,6 +16,7 @@ JLPT Coverage 是一个 Anki 插件，面向通过沉浸材料挖词的日语学
 - 可按 Anki interval 口径统计 Young 和 Mature 覆盖率。
 - 导出一份词表状态 CSV，包含 missing 和 unlearned 标记。
 - 可给匹配到的 Anki notes 添加 `JLPT::N1` 到 `JLPT::N5` 标签，以及 N1-N3 频率标签。
+- 提供可选的 Yomitan 元数据词典，可在阅读查词时显示 eggrolls JLPT 标签。
 - 插件内置项目本地的 JLPT 词表 CSV，运行时不会读取原始 deck 文件。
 
 覆盖率统计和 CSV 导出只会通过 Anki add-on API 读取当前打开的集合。可选的 `打 JLPT 标签` 操作会向匹配到的 notes 写入标签。
@@ -44,6 +45,19 @@ JLPT Coverage 是一个 Anki 插件，面向通过沉浸材料挖词的日语学
 6. 打开 `Tools -> JLPT Coverage`。
 
 GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。如果你下载的是 workflow artifact，而不是 Release asset，需要先解压，再安装里面的 `.ankiaddon` 文件。
+
+## Yomitan 词典
+
+最新版 Release 还包含 `eggrolls-jlpt-yomitan.zip`。这是一个 Yomitan term metadata dictionary，使用与插件内置词表相同的 eggrolls JLPT 数据生成。
+
+在 Yomitan 中进入 `Settings -> Dictionaries -> Import Dictionary`，选择 `eggrolls-jlpt-yomitan.zip` 导入。导入后，匹配到的查词结果会在 Yomitan 弹窗里显示 JLPT 标签。
+
+词典显示规则：
+
+- N1-N3 会带 eggrolls 频段，例如 `N1高频`、`N2中频`、`N3低频`。
+- N4 和 N5 只显示等级，即 `N4`、`N5`。
+
+这是元数据词典，不是完整释义词典。它不包含释义、例句、音频或卡片模板，适合和常规 Yomitan 词典一起使用，让你在阅读时直接看到词条的 JLPT 状态。
 
 ## 基本用法
 
