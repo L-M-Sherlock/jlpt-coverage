@@ -200,6 +200,20 @@ uv run scripts/validate_anki_addon.py
 dist/jlpt_coverage.ankiaddon
 ```
 
+构建并校验 Yomitan JLPT 元数据词典：
+
+```bash
+uv run scripts/build_yomitan_jlpt_dict.py
+uv run scripts/validate_yomitan_jlpt_dict.py
+```
+
+Yomitan 输出文件：
+
+```text
+yomitan-eggrolls-jlpt-vocab/
+dist/eggrolls-jlpt-yomitan.zip
+```
+
 从原始 source deck 中提取项目本地词表：
 
 ```bash
@@ -208,11 +222,13 @@ uv run scripts/extract_jlpt_vocab.py
 
 该命令只会把工具需要的字段写入 `jlpt_coverage/data/jlpt_vocab.csv`。
 
-GitHub Actions 会在 push 和 pull request 时构建并校验插件。推送 `v*` tag 时，还会把 `jlpt_coverage.ankiaddon` 直接上传到 GitHub Release。
+GitHub Actions 会在 push 和 pull request 时构建并校验插件和 Yomitan 词典。推送 `v*` tag 时，还会把 `jlpt_coverage.ankiaddon` 和 `eggrolls-jlpt-yomitan.zip` 直接上传到 GitHub Release。
 
 ## 词表来源与致谢
 
 JLPT 词汇数据来自 [5mdld/anki-jlpt-decks](https://github.com/5mdld/anki-jlpt-decks) 中的 eggrolls JLPT10k deck。
+
+Yomitan 词典是元数据词典：它会给匹配词条添加 `N2高频` 等 JLPT 等级和 eggrolls 频段标签，但不包含释义、例句或音频。源词表数据使用 CC BY-NC 4.0 许可。
 
 本项目只保留覆盖率统计所需字段：
 
