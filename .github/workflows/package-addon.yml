@@ -1,4 +1,4 @@
-name: Package Anki Add-on
+name: Package Artifacts
 
 on:
   push:
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   package:
-    name: Build .ankiaddon
+    name: Build add-on and Yomitan dictionary
     runs-on: ubuntu-latest
 
     steps:
@@ -52,6 +52,12 @@ jobs:
       - name: Validate add-on archive
         run: uv run scripts/validate_anki_addon.py
 
+      - name: Package Yomitan dictionary
+        run: uv run scripts/build_yomitan_jlpt_dict.py
+
+      - name: Validate Yomitan dictionary
+        run: uv run scripts/validate_yomitan_jlpt_dict.py
+
       - name: Upload add-on artifact
         uses: actions/upload-artifact@v4
         with:
@@ -59,16 +65,24 @@ jobs:
           path: dist/jlpt_coverage.ankiaddon
           if-no-files-found: error
 
-      - name: Upload direct add-on asset to release
+      - name: Upload Yomitan dictionary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eggrolls-jlpt-yomitan
+          path: dist/eggrolls-jlpt-yomitan.zip
+          if-no-files-found: error
+
+      - name: Upload direct assets to release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
+          assets="dist/jlpt_coverage.ankiaddon dist/eggrolls-jlpt-yomitan.zip"
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" dist/jlpt_coverage.ankiaddon --clobber
+            gh release upload "$TAG_NAME" $assets --clobber
           else
-            gh release create "$TAG_NAME" dist/jlpt_coverage.ankiaddon \
+            gh release create "$TAG_NAME" $assets \
               --title "$TAG_NAME" \
-              --notes "Automated JLPT Coverage add-on build."
+              --notes "Automated JLPT Coverage artifact build."
           fi

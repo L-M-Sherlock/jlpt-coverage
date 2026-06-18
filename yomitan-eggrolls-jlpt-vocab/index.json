@@ -1,0 +1,15 @@
+{
+  "title": "Eggrolls JLPT",
+  "author": "JLPT Coverage contributors; vocabulary data by 5mdld/eggrolls",
+  "sequenced": false,
+  "format": 3,
+  "url": "https://github.com/5mdld/anki-jlpt-decks",
+  "isUpdatable": true,
+  "indexUrl": "https://raw.githubusercontent.com/L-M-Sherlock/jlpt-coverage/refs/heads/main/yomitan-eggrolls-jlpt-vocab/index.json",
+  "downloadUrl": "https://github.com/L-M-Sherlock/jlpt-coverage/releases/latest/download/eggrolls-jlpt-yomitan.zip",
+  "description": "eggrolls JLPT10k vocabulary levels and frequency bands converted to a Yomitan term metadata dictionary.",
+  "attribution": "Vocabulary data derived from the eggrolls JLPT10k deck by 5mdld.\nOriginal deck: https://github.com/5mdld/anki-jlpt-decks\n\nThe source vocabulary data is licensed under Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0). This derivative dictionary is for non-commercial use.",
+  "sourceLanguage": "ja",
+  "targetLanguage": "zh",
+  "revision": "2026.06.17.0"
+}

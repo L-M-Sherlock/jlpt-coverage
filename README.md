@@ -200,6 +200,20 @@ The output is:
 dist/jlpt_coverage.ankiaddon
 ```
 
+Build and validate the Yomitan JLPT metadata dictionary:
+
+```bash
+uv run scripts/build_yomitan_jlpt_dict.py
+uv run scripts/validate_yomitan_jlpt_dict.py
+```
+
+The Yomitan output is:
+
+```text
+yomitan-eggrolls-jlpt-vocab/
+dist/eggrolls-jlpt-yomitan.zip
+```
+
 Extract the project-local vocabulary CSV from the original source deck:
 
 ```bash
@@ -208,11 +222,13 @@ uv run scripts/extract_jlpt_vocab.py
 
 This writes only the columns needed by the tool into `jlpt_coverage/data/jlpt_vocab.csv`.
 
-The GitHub Actions workflow builds and validates the add-on on pushes and pull requests. For `v*` tags, it also uploads `jlpt_coverage.ankiaddon` directly to the GitHub Release.
+The GitHub Actions workflow builds and validates the add-on and Yomitan dictionary on pushes and pull requests. For `v*` tags, it also uploads `jlpt_coverage.ankiaddon` and `eggrolls-jlpt-yomitan.zip` directly to the GitHub Release.
 
 ## Vocabulary Data and Acknowledgements
 
 JLPT vocabulary data is extracted from the eggrolls JLPT10k deck in [5mdld/anki-jlpt-decks](https://github.com/5mdld/anki-jlpt-decks).
+
+The Yomitan dictionary is a metadata dictionary: it adds JLPT level and eggrolls frequency labels such as `N2高频` to matching terms, but does not include definitions, examples, or audio. The source vocabulary data is licensed under CC BY-NC 4.0.
 
 This project keeps only the fields needed for coverage reporting:
 
