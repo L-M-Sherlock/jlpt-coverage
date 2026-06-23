@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
-from .text import JLPT_LEVELS, frequency_sort_key, level_sort_key, text_keys
+from .text import JLPT_LEVELS, frequency_sort_key, is_katakana_word, level_sort_key, text_keys
 
 
 DEFAULT_NOTE_TYPES = ("Lapis", "Kaishi 1.5k", "Kaishi 1.5k zh-CH")
@@ -51,8 +51,14 @@ class JlptEntry:
         return text_keys(self.word_plain)
 
     @property
+    def matching_reading(self) -> str:
+        if is_katakana_word(self.word_plain):
+            return self.word_plain
+        return self.reading
+
+    @property
     def reading_keys(self) -> set[str]:
-        return text_keys(self.reading)
+        return text_keys(self.matching_reading)
 
 
 @dataclass(frozen=True)

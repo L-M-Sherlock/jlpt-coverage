@@ -12,6 +12,7 @@ from jlpt_coverage.yomitan import (
     display_value_for_entry,
     expected_filenames,
     package_dictionary,
+    term_meta_entry_for_entry,
     write_dictionary_files,
 )
 
@@ -24,6 +25,11 @@ class YomitanDictionaryTests(unittest.TestCase):
     def test_display_value_uses_level_only_for_n4_and_n5(self) -> None:
         self.assertEqual(display_value_for_entry(JlptEntry("N4", "未分频", "読む", "よむ")), "N4")
         self.assertEqual(display_value_for_entry(JlptEntry("N5", "未分频", "高校", "こうこう")), "N5")
+
+    def test_term_meta_uses_katakana_word_as_reading_for_pure_katakana_terms(self) -> None:
+        entry = term_meta_entry_for_entry(JlptEntry("N4", "未分频", "アイスクリーム", "ice cream"))
+
+        self.assertEqual(entry[2]["reading"], "アイスクリーム")
 
     def test_dictionary_data_removes_exact_duplicate_metadata(self) -> None:
         entries = [

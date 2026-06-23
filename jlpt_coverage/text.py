@@ -22,6 +22,8 @@ _DROP_CHARS_RE = re.compile(
     r"。．.、,，;；:："
     r"()（）［］\[\]{}｛｝<>〈〉《》「」『』“”\"'`]"
 )
+_PURE_KATAKANA_RE = re.compile(r"^[ァ-ヶー・ヽヾ]+$")
+_KATAKANA_LETTER_RE = re.compile(r"[ァ-ヶ]")
 
 
 def clean_markup(value: str) -> str:
@@ -67,6 +69,11 @@ def kata_to_hira(value: str) -> str:
         else:
             chars.append(char)
     return "".join(chars)
+
+
+def is_katakana_word(value: str) -> bool:
+    clean = strip_furigana(value).strip()
+    return bool(_KATAKANA_LETTER_RE.search(clean)) and bool(_PURE_KATAKANA_RE.fullmatch(clean))
 
 
 def normalize_key(value: str) -> str:

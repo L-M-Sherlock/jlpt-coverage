@@ -27,6 +27,26 @@ class MatchModeTests(unittest.TestCase):
     def test_word_and_reading_rejects_wrong_reading(self) -> None:
         self.assertFalse(self.classify("見る", "よむ", "word-and-reading"))
 
+    def test_pure_katakana_entry_matches_reading_by_word_not_source_language(self) -> None:
+        entry = JlptEntry("N4", "未分频", "アイスクリーム", "ice cream")
+
+        covered_by_katakana, _matched_by = classify_match(entry, set(), text_keys("アイスクリーム"), "reading")
+        covered_by_hiragana, _matched_by = classify_match(entry, set(), text_keys("あいすくりーむ"), "reading")
+        covered_by_source, _matched_by = classify_match(entry, set(), text_keys("ice cream"), "reading")
+
+        self.assertTrue(covered_by_katakana)
+        self.assertTrue(covered_by_hiragana)
+        self.assertFalse(covered_by_source)
+
+    def test_mixed_katakana_entry_uses_source_reading(self) -> None:
+        entry = JlptEntry("N4", "未分频", "電子レンジ", "でんしレンジ")
+
+        covered_by_reading, _matched_by = classify_match(entry, set(), text_keys("でんしレンジ"), "reading")
+        covered_by_word, _matched_by = classify_match(entry, set(), text_keys("電子レンジ"), "reading")
+
+        self.assertTrue(covered_by_reading)
+        self.assertFalse(covered_by_word)
+
     def test_word_and_reading_is_accepted_by_cli_parser(self) -> None:
         args = parse_args(["--match-mode", "word-and-reading"])
 
