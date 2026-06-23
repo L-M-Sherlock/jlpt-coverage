@@ -31,6 +31,12 @@ class YomitanDictionaryTests(unittest.TestCase):
 
         self.assertEqual(entry[2]["reading"], "アイスクリーム")
 
+    def test_term_meta_strips_placeholder_marks_from_term_and_reading(self) -> None:
+        entry = term_meta_entry_for_entry(JlptEntry("N5", "未分频", "〜か月", "〜かげつ"))
+
+        self.assertEqual(entry[0], "か月")
+        self.assertEqual(entry[2]["reading"], "かげつ")
+
     def test_dictionary_data_removes_exact_duplicate_metadata(self) -> None:
         entries = [
             JlptEntry("N2", "低频", "甘み", "あまみ"),

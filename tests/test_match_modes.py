@@ -19,6 +19,14 @@ class MatchModeTests(unittest.TestCase):
         self.assertTrue(self.classify("見る", "", "word-or-reading"))
         self.assertTrue(self.classify("", "みる", "word-or-reading"))
 
+    def test_placeholder_mark_is_ignored_for_word_and_reading_matching(self) -> None:
+        entry = JlptEntry("N5", "未分频", "〜か月", "〜かげつ")
+
+        covered, matched_by = classify_match(entry, text_keys("か月"), text_keys("かげつ"), "word-and-reading")
+
+        self.assertTrue(covered)
+        self.assertEqual(matched_by, "word+reading")
+
     def test_word_and_reading_requires_both_sides(self) -> None:
         self.assertFalse(self.classify("見る", "", "word-and-reading"))
         self.assertFalse(self.classify("", "みる", "word-and-reading"))

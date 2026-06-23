@@ -82,7 +82,7 @@ def display_value_for_entry(entry: JlptEntry) -> str:
 
 def term_meta_entry_for_entry(entry: JlptEntry) -> TermMetaEntry:
     return [
-        entry.word_plain,
+        entry.matching_term,
         "freq",
         {
             "reading": entry.matching_reading,
@@ -105,7 +105,7 @@ def dictionary_data(entries: list[JlptEntry], revision: str) -> YomitanDictionar
             raise ValueError(f"Unsupported Yomitan JLPT level: {entry.level}. Expected one of: {allowed}")
 
         display_value = display_value_for_entry(entry)
-        key = (entry.word_plain, entry.matching_reading, display_value)
+        key = (entry.matching_term, entry.matching_reading, display_value)
         if key in seen:
             duplicate_rows += 1
             continue
