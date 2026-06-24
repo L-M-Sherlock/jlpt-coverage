@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jlpt-coverage"
-version = "0.3.0"
+version = "0.3.1"
 description = "An Anki add-on for checking JLPT vocabulary coverage of Japanese mining cards."
 readme = "README.md"
 requires-python = ">=3.11"
