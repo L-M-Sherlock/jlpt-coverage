@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .core import JlptEntry, load_jlpt_entries
+from .core import JlptEntry, iter_disambiguated_jlpt_terms, load_jlpt_entries
 
 
 YOMITAN_LEVELS = ("N1", "N2", "N3", "N4", "N5")
@@ -80,12 +80,16 @@ def display_value_for_entry(entry: JlptEntry) -> str:
     return entry.level
 
 
-def term_meta_entry_for_entry(entry: JlptEntry) -> TermMetaEntry:
+def term_meta_entry_for_entry(
+    entry: JlptEntry,
+    term: str | None = None,
+    reading: str | None = None,
+) -> TermMetaEntry:
     return [
-        entry.matching_term,
+        term or entry.matching_term,
         "freq",
         {
-            "reading": entry.matching_reading,
+            "reading": reading or entry.matching_reading,
             "frequency": {
                 "value": -1,
                 "displayValue": display_value_for_entry(entry),
@@ -99,19 +103,19 @@ def dictionary_data(entries: list[JlptEntry], revision: str) -> YomitanDictionar
     seen: set[tuple[str, str, str]] = set()
     duplicate_rows = 0
 
-    for entry in entries:
+    for entry, term, reading in iter_disambiguated_jlpt_terms(entries):
         if entry.level not in banks_by_level:
             allowed = ", ".join(YOMITAN_LEVELS)
             raise ValueError(f"Unsupported Yomitan JLPT level: {entry.level}. Expected one of: {allowed}")
 
         display_value = display_value_for_entry(entry)
-        key = (entry.matching_term, entry.matching_reading, display_value)
+        key = (term, reading, display_value)
         if key in seen:
             duplicate_rows += 1
             continue
 
         seen.add(key)
-        banks_by_level[entry.level].append(term_meta_entry_for_entry(entry))
+        banks_by_level[entry.level].append(term_meta_entry_for_entry(entry, term, reading))
 
     return YomitanDictionaryData(
         index=default_index(revision),

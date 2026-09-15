@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from collections import Counter, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -12,7 +12,10 @@ from .text import (
     frequency_sort_key,
     is_katakana_word,
     level_sort_key,
+    reading_from_furigana,
+    reading_text_keys,
     strip_placeholder_marks,
+    split_variants,
     text_keys,
 )
 
@@ -52,6 +55,7 @@ class JlptEntry:
     frequency: str
     word_plain: str
     reading: str
+    word_alternatives: str = ""
 
     @property
     def term_keys(self) -> set[str]:
@@ -69,7 +73,22 @@ class JlptEntry:
 
     @property
     def reading_keys(self) -> set[str]:
-        return text_keys(self.matching_reading)
+        return reading_text_keys(self.matching_reading)
+
+    @property
+    def alternative_terms(self) -> tuple[str, ...]:
+        return tuple(term for term, _reading in self.alternative_term_readings)
+
+    @property
+    def alternative_term_readings(self) -> tuple[tuple[str, str], ...]:
+        alternatives: list[tuple[str, str]] = []
+        for value in split_variants(self.word_alternatives):
+            term = strip_placeholder_marks(value)
+            reading = strip_placeholder_marks(reading_from_furigana(value)) or self.matching_reading
+            alternative = (term, reading)
+            if term and alternative != (self.matching_term, self.matching_reading) and alternative not in alternatives:
+                alternatives.append(alternative)
+        return tuple(alternatives)
 
 
 @dataclass(frozen=True)
@@ -98,6 +117,29 @@ class JlptLevelIndexes:
     skipped_levels: dict[str, int]
 
 
+def iter_disambiguated_jlpt_terms(entries: Iterable[JlptEntry]) -> Iterator[tuple[JlptEntry, str, str]]:
+    """Yield source entries paired with unambiguous written forms and readings.
+
+    For identical term/reading/level groups, the plain source term keeps only the
+    highest-frequency label. Kanji alternatives remain paired with the frequency
+    of their original source row.
+    """
+    source_entries = list(entries)
+    preferred_frequencies: dict[tuple[str, str, str], str] = {}
+    for entry in source_entries:
+        group_key = (entry.matching_term, entry.matching_reading, entry.level)
+        current = preferred_frequencies.get(group_key)
+        if current is None or frequency_sort_key(entry.frequency) < frequency_sort_key(current):
+            preferred_frequencies[group_key] = entry.frequency
+
+    for entry in source_entries:
+        group_key = (entry.matching_term, entry.matching_reading, entry.level)
+        if entry.frequency == preferred_frequencies[group_key]:
+            yield entry, entry.matching_term, entry.matching_reading
+        for term, reading in entry.alternative_term_readings:
+            yield entry, term, reading
+
+
 def load_jlpt_entries(path: Path) -> list[JlptEntry]:
     entries: list[JlptEntry] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -119,6 +161,7 @@ def load_jlpt_entries(path: Path) -> list[JlptEntry]:
                     frequency=row["frequency"],
                     word_plain=row["word_plain"],
                     reading=row["reading"],
+                    word_alternatives=row.get("word_alternatives", "") or "",
                 )
             )
     return entries
@@ -192,13 +235,17 @@ def build_jlpt_level_indexes(entries: list[JlptEntry]) -> JlptLevelIndexes:
     term_reading_index: dict[tuple[str, str], set[JlptTagTarget]] = defaultdict(set)
     skipped_levels: Counter[str] = Counter()
 
+    supported_entries: list[JlptEntry] = []
     for entry in entries:
         if entry.level not in JLPT_TAG_LEVELS:
             skipped_levels[entry.level] += 1
             continue
+        supported_entries.append(entry)
+
+    for entry, term, reading in iter_disambiguated_jlpt_terms(supported_entries):
         target = JlptTagTarget(entry.level, entry.frequency)
-        term_keys = entry.term_keys
-        reading_keys = entry.reading_keys
+        term_keys = text_keys(term)
+        reading_keys = reading_text_keys(reading)
         for key in term_keys:
             term_index[key].add(entry.level)
         for key in reading_keys:

@@ -25,6 +25,8 @@ _DROP_CHARS_RE = re.compile(
 _PURE_KATAKANA_RE = re.compile(r"^[ァ-ヶー・ヽヾ]+$")
 _KATAKANA_LETTER_RE = re.compile(r"[ァ-ヶ]")
 _PLACEHOLDER_MARK_RE = re.compile(r"[~〜～]")
+_READING_VARIANT_RE = re.compile(r"[・･]")
+_HIRAGANA_READING_VARIANTS_RE = re.compile(r"^[ぁ-ゖー]+(?:[・･][ぁ-ゖー]+)+$")
 
 
 def clean_markup(value: str) -> str:
@@ -59,6 +61,12 @@ def strip_furigana(value: str) -> str:
         if stripped == clean:
             return stripped
         clean = stripped
+
+
+def reading_from_furigana(value: str) -> str:
+    clean = clean_markup(value)
+    reading = _BRACKET_READING_RE.sub(r"\2", clean)
+    return reading.strip() if reading != clean else ""
 
 
 def kata_to_hira(value: str) -> str:
@@ -119,6 +127,20 @@ def text_keys(value: str, *, include_bracket_readings: bool = True) -> set[str]:
         if key and has_japanese(key):
             keys.add(key)
             keys.add(kata_to_hira(key))
+    return keys
+
+
+def reading_text_keys(value: str) -> set[str]:
+    """Build reading keys, splitting middle-dot-separated hiragana alternatives."""
+    clean = clean_markup(value).strip()
+    if not _HIRAGANA_READING_VARIANTS_RE.fullmatch(clean):
+        return text_keys(clean)
+
+    keys: set[str] = set()
+    for reading in _READING_VARIANT_RE.split(clean):
+        reading = reading.strip()
+        if reading:
+            keys.update(text_keys(reading))
     return keys
 
 

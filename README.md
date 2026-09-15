@@ -56,6 +56,7 @@ The dictionary displays:
 
 - N1-N3 with eggrolls frequency bands, such as `N1高频`, `N2中频`, or `N3低频`.
 - N4 and N5 as level-only labels, `N4` and `N5`.
+- Reviewed spelling and reading variants from the source data and JMdict. When identical kana entries have different frequency bands, the kana form keeps the highest-frequency label.
 
 This is a metadata dictionary, not a full definition dictionary. It does not include meanings, examples, audio, or card templates. It is intended to sit alongside your normal Yomitan dictionaries and make JLPT status visible while reading.
 
@@ -101,6 +102,8 @@ The JLPT side uses `word_plain` as the written form and `reading` as the reading
 ## JLPT Note Tags
 
 `Tag JLPT` uses the same note type, field, and suspended-card settings shown in the dialog. It does not use the coverage match-mode selector: tagging always requires the same JLPT vocabulary entry's written form and reading to both match the note.
+
+Reviewed spelling variants participate in this strict match. A reading field containing hiragana alternatives separated by `・`, such as `なに・なん`, matches either reading; katakana middle dots are preserved as part of the term.
 
 The generated level tags are `JLPT::N1`, `JLPT::N2`, `JLPT::N3`, `JLPT::N4`, and `JLPT::N5`. N1, N2, and N3 matches also receive frequency tags such as `JLPT::N2::高频`, `JLPT::N2::中频`, or `JLPT::N2::低频`. Anki tags are note-level, so every card generated from a tagged note will show the same tag.
 
@@ -236,6 +239,8 @@ uv run scripts/extract_jlpt_vocab.py
 
 This writes only the columns needed by the tool into `jlpt_coverage/data/jlpt_vocab.csv`.
 
+Reviewed alternatives are stored in `scripts/data/verified_word_alternatives.csv`. Each row is keyed by the stable eggrolls note ID and records either `VocabPlus` provenance or a JMdict sequence, so mixed-purpose source text is never imported blindly.
+
 The GitHub Actions workflow builds and validates the add-on and Yomitan dictionary on pushes and pull requests. For `v*` tags, it also uploads `jlpt_coverage.ankiaddon` and `eggrolls-jlpt-yomitan.zip` directly to the GitHub Release.
 
 ## Vocabulary Data and Acknowledgements
@@ -244,11 +249,12 @@ JLPT vocabulary data is extracted from the eggrolls JLPT10k deck in [5mdld/anki-
 
 The Yomitan dictionary is a metadata dictionary: it adds JLPT level and eggrolls frequency labels such as `N2高频` to matching terms, but does not include definitions, examples, or audio. The source vocabulary data is licensed under CC BY-NC 4.0.
 
-This project keeps only the fields needed for coverage reporting:
+This project keeps only the fields needed for coverage reporting and Yomitan metadata generation:
 
 - `level`
 - `frequency`
 - `word_plain`
 - `reading`
+- `word_alternatives` (reviewed spelling/reading variants and frequency-conflict alternatives)
 
 Thanks to the maintainers of that deck and to the authors of the tools and note types used by the Japanese mining community.

@@ -14,7 +14,7 @@ from .core import (
     field_is_term,
     split_fields,
 )
-from .text import text_keys
+from .text import reading_text_keys, text_keys
 
 
 def copy_collection(
@@ -147,7 +147,7 @@ def collect_anki_keys(
                     if has_mature_card:
                         mature_term_keys.update(keys)
                 elif field_is_reading(note_type_name, name):
-                    keys = text_keys(value)
+                    keys = reading_text_keys(value)
                     reading_keys.update(keys)
                     if has_learned_card:
                         learned_reading_keys.update(keys)

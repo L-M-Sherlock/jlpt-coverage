@@ -4,7 +4,7 @@ import unittest
 
 from jlpt_coverage.cli import parse_args
 from jlpt_coverage.core import JlptEntry, classify_match
-from jlpt_coverage.text import text_keys
+from jlpt_coverage.text import reading_text_keys, text_keys
 
 
 class MatchModeTests(unittest.TestCase):
@@ -26,6 +26,14 @@ class MatchModeTests(unittest.TestCase):
 
         self.assertTrue(covered)
         self.assertEqual(matched_by, "word+reading")
+
+    def test_middle_dot_is_only_a_separator_for_reading_fields(self) -> None:
+        self.assertEqual(reading_text_keys("なに・なん"), {"なに", "なん"})
+        self.assertNotEqual(text_keys("なに・なん"), {"なに", "なん"})
+
+    def test_middle_dot_in_katakana_reading_is_not_split(self) -> None:
+        self.assertIn("ばんごっほ", reading_text_keys("バン・ゴッホ"))
+        self.assertNotIn("ばん", reading_text_keys("バン・ゴッホ"))
 
     def test_word_and_reading_requires_both_sides(self) -> None:
         self.assertFalse(self.classify("見る", "", "word-and-reading"))

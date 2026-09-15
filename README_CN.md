@@ -56,6 +56,7 @@ GitHub Actions 的 artifact 下载时会被 GitHub 固定包成外层 `.zip`。�
 
 - N1-N3 会带 eggrolls 频段，例如 `N1高频`、`N2中频`、`N3低频`。
 - N4 和 N5 只显示等级，即 `N4`、`N5`。
+- 保留源数据和 JMdict 中经过审核的字形及读音变体；当同一个假名词条存在不同频段时，假名词形本身只显示最高频段。
 
 这是元数据词典，不是完整释义词典。它不包含释义、例句、音频或卡片模板，适合和常规 Yomitan 词典一起使用，让你在阅读时直接看到词条的 JLPT 状态。
 
@@ -101,6 +102,8 @@ JLPT 词表侧使用 `word_plain` 作为字形字段，`reading` 作为读音字
 ## JLPT note 标签
 
 `打 JLPT 标签` 会使用界面上当前选择的 note type、字段和排除暂停卡片设置。它不使用覆盖率统计的匹配模式下拉框；打标签始终要求同一条 JLPT 词表项的字形和读音都命中当前 note。
+
+经过审核的字形变体也会参与严格匹配。读音字段中的纯平假名可以使用 `・` 分隔多个候选，例如 `なに・なん` 会匹配任一读音；片假名词中的中点仍作为词形的一部分保留。
 
 生成的等级标签是 `JLPT::N1`、`JLPT::N2`、`JLPT::N3`、`JLPT::N4`、`JLPT::N5`。N1、N2、N3 命中项还会生成频率标签，例如 `JLPT::N2::高频`、`JLPT::N2::中频`、`JLPT::N2::低频`。Anki 标签挂在 note 上，因此同一个 note 生成的所有 cards 都会显示同样的标签。
 
@@ -236,6 +239,8 @@ uv run scripts/extract_jlpt_vocab.py
 
 该命令只会把工具需要的字段写入 `jlpt_coverage/data/jlpt_vocab.csv`。
 
+经过审核的变体保存在 `scripts/data/verified_word_alternatives.csv`。每行使用稳定的 eggrolls NoteID 关联，并记录 `VocabPlus` 来源或 JMdict sequence，避免把混合用途的源文本直接作为词形导入。
+
 GitHub Actions 会在 push 和 pull request 时构建并校验插件和 Yomitan 词典。推送 `v*` tag 时，还会把 `jlpt_coverage.ankiaddon` 和 `eggrolls-jlpt-yomitan.zip` 直接上传到 GitHub Release。
 
 ## 词表来源与致谢
@@ -244,11 +249,12 @@ JLPT 词汇数据来自 [5mdld/anki-jlpt-decks](https://github.com/5mdld/anki-jl
 
 Yomitan 词典是元数据词典：它会给匹配词条添加 `N2高频` 等 JLPT 等级和 eggrolls 频段标签，但不包含释义、例句或音频。源词表数据使用 CC BY-NC 4.0 许可。
 
-本项目只保留覆盖率统计所需字段：
+本项目只保留覆盖率统计和生成 Yomitan 元数据所需字段：
 
 - `level`
 - `frequency`
 - `word_plain`
 - `reading`
+- `word_alternatives`（经过审核的字形/读音变体及频段冲突别表记）
 
 感谢该 deck 的维护者，以及日语 mining 社区中相关工具和 note type 的作者。

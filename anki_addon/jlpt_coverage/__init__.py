@@ -52,7 +52,7 @@ try:
         vocab_status_rows,
     )
     from .jlpt_coverage.reports import write_vocab_status_report
-    from .jlpt_coverage.text import text_keys
+    from .jlpt_coverage.text import reading_text_keys, text_keys
 except ImportError:
     project_root = Path(__file__).resolve().parents[2]
     if str(project_root) not in sys.path:
@@ -72,7 +72,7 @@ except ImportError:
         vocab_status_rows,
     )
     from jlpt_coverage.reports import write_vocab_status_report
-    from jlpt_coverage.text import text_keys
+    from jlpt_coverage.text import reading_text_keys, text_keys
 
 
 ADDON_DIR = Path(__file__).resolve().parent
@@ -273,7 +273,7 @@ def collect_anki_keys_from_collection(
                     if has_mature_card:
                         mature_term_keys.update(keys)
                 elif field_matches(field_rules, note_type_name, "reading", name):
-                    keys = text_keys(value)
+                    keys = reading_text_keys(value)
                     reading_keys.update(keys)
                     if has_learned_card:
                         learned_reading_keys.update(keys)
@@ -417,7 +417,7 @@ def preview_jlpt_tags_from_collection(
                 if field_matches(field_rules, note_type_name, "term", name):
                     term_keys.update(text_keys(value))
                 elif field_matches(field_rules, note_type_name, "reading", name):
-                    reading_keys.update(text_keys(value))
+                    reading_keys.update(reading_text_keys(value))
 
             targets = matched_jlpt_targets_strict(term_keys, reading_keys, indexes)
             if not targets:

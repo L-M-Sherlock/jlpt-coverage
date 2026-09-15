@@ -48,21 +48,59 @@ class YomitanDictionaryTests(unittest.TestCase):
         self.assertEqual(data.entry_count, 1)
         self.assertEqual(data.duplicate_rows, 1)
 
-    def test_dictionary_data_keeps_same_word_reading_with_different_labels(self) -> None:
+    def test_dictionary_data_keeps_same_word_reading_across_levels(self) -> None:
         entries = [
             JlptEntry("N4", "未分频", "先", "さき"),
             JlptEntry("N5", "未分频", "先", "さき"),
-            JlptEntry("N2", "中频", "まく", "まく"),
-            JlptEntry("N2", "高频", "まく", "まく"),
         ]
 
         data = dictionary_data(entries, "2026.06.17.0")
 
-        self.assertEqual(data.entry_count, 4)
+        self.assertEqual(data.entry_count, 2)
         self.assertEqual(data.banks_by_level["N4"][0][2]["frequency"]["displayValue"], "N4")
         self.assertEqual(data.banks_by_level["N5"][0][2]["frequency"]["displayValue"], "N5")
-        self.assertEqual(data.banks_by_level["N2"][0][2]["frequency"]["displayValue"], "N2中频")
-        self.assertEqual(data.banks_by_level["N2"][1][2]["frequency"]["displayValue"], "N2高频")
+
+    def test_dictionary_data_uses_alternatives_to_disambiguate_frequency_conflicts(self) -> None:
+        entries = [
+            JlptEntry("N2", "中频", "まく", "まく", "蒔く"),
+            JlptEntry("N2", "高频", "まく", "まく", "撒く"),
+            JlptEntry("N1", "低频", "たたえる", "たたえる", "湛える"),
+            JlptEntry("N1", "高频", "たたえる", "たたえる", "称える;讃える"),
+        ]
+
+        data = dictionary_data(entries, "2026.09.15.0")
+
+        actual = {
+            (term, metadata["reading"], metadata["frequency"]["displayValue"])
+            for bank in data.banks_by_level.values()
+            for term, _kind, metadata in bank
+        }
+        self.assertEqual(
+            actual,
+            {
+                ("まく", "まく", "N2高频"),
+                ("蒔く", "まく", "N2中频"),
+                ("撒く", "まく", "N2高频"),
+                ("たたえる", "たたえる", "N1高频"),
+                ("湛える", "たたえる", "N1低频"),
+                ("称える", "たたえる", "N1高频"),
+                ("讃える", "たたえる", "N1高频"),
+            },
+        )
+
+    def test_dictionary_data_uses_alternative_specific_reading(self) -> None:
+        data = dictionary_data(
+            [JlptEntry("N5", "未分频", "〜頃", "〜ごろ", "頃[ころ]")],
+            "2026.09.15.0",
+        )
+
+        self.assertEqual(
+            data.banks_by_level["N5"],
+            [
+                ["頃", "freq", {"reading": "ごろ", "frequency": {"value": -1, "displayValue": "N5"}}],
+                ["頃", "freq", {"reading": "ころ", "frequency": {"value": -1, "displayValue": "N5"}}],
+            ],
+        )
 
     def test_write_and_package_dictionary_use_zip_root_files(self) -> None:
         entries = [
