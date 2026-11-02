@@ -80,8 +80,8 @@ PACKAGE_VOCAB_PATH = ADDON_DIR / "data" / "jlpt_vocab.csv"
 SOURCE_VOCAB_PATH = ADDON_DIR.parents[1] / "jlpt_coverage" / "data" / "jlpt_vocab.csv"
 
 MODE_CHOICES = (
-    ("word-or-reading", "mode-word-or-reading"),
     ("word-and-reading", "mode-word-and-reading"),
+    ("word-or-reading", "mode-word-or-reading"),
     ("reading", "mode-reading"),
     ("word", "mode-word"),
 )
@@ -553,7 +553,7 @@ class CoverageDialog(QDialog):
         option_row = QHBoxLayout()
         option_row.addWidget(QLabel(t("match-mode")))
         self.mode_combo = QComboBox()
-        configured_mode = config().get("match_mode", "word-or-reading")
+        configured_mode = config().get("match_mode", "word-and-reading")
         for value, label_key in MODE_CHOICES:
             self.mode_combo.addItem(t(label_key), value)
             if value == configured_mode:

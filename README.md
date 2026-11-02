@@ -92,8 +92,8 @@ You can select different fields in the UI for any note type in your collection.
 
 | Mode | Meaning | Best for |
 | --- | --- | --- |
-| `word-or-reading` | A JLPT entry is covered if either the written form or the reading matches. | Default mining coverage checks. |
-| `word-and-reading` | A JLPT entry is covered only if both the written form and the reading match. | Strict coverage checks that avoid reading-only or word-only false positives. |
+| `word-and-reading` | A JLPT entry is covered only if both the written form and the reading match. | Default coverage checks that avoid reading-only or word-only false positives. |
+| `word-or-reading` | A JLPT entry is covered if either the written form or the reading matches. | Broader mining coverage checks. |
 | `reading` | Only readings are compared. | Avoiding missed matches caused by spelling, kana/kanji, or orthographic differences. |
 | `word` | Only written forms are compared. | Stricter checks where the exact written vocabulary item matters more. |
 

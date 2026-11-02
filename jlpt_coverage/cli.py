@@ -97,9 +97,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     match_group = parser.add_mutually_exclusive_group()
     match_group.add_argument(
         "--match-mode",
-        choices=("word-or-reading", "word-and-reading", "word", "reading"),
+        choices=("word-and-reading", "word-or-reading", "reading", "word"),
         default=None,
-        help="How a JLPT row should be considered covered. Default: word-or-reading.",
+        help="How a JLPT row should be considered covered. Default: word-and-reading.",
     )
     match_group.add_argument(
         "--reading-only",
@@ -159,7 +159,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     if args.match_mode is None:
-        args.match_mode = "word-or-reading"
+        args.match_mode = "word-and-reading"
     return args
 
 

@@ -18,7 +18,7 @@
       "reading": "Word Reading"
     }
   },
-  "match_mode": "word-or-reading",
+  "match_mode": "word-and-reading",
   "by_frequency": false,
   "by_interval": false,
   "exclude_suspended": false,
